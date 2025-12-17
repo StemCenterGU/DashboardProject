@@ -1,0 +1,33 @@
+========================================
+FIX REMOTE AND PUSH
+========================================
+
+The remote "origin" already exists. Run these commands:
+
+1. Remove old remote:
+   git remote remove origin
+
+2. Add new remote:
+   git remote add origin git@github.com:AvishManiar21/DashboardProject.git
+
+3. Push to GitHub:
+   git push -u origin main
+
+========================================
+OR UPDATE EXISTING REMOTE:
+========================================
+
+If you prefer to update instead of remove:
+
+git remote set-url origin git@github.com:AvishManiar21/DashboardProject.git
+git push -u origin main
+
+========================================
+IF SSH DOESN'T WORK, USE HTTPS:
+========================================
+
+git remote set-url origin https://github.com/AvishManiar21/DashboardProject.git
+git push -u origin main
+
+========================================
+

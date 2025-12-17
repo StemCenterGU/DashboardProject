@@ -1,0 +1,31 @@
+========================================
+PUSH ALL BRANCHES TO GITHUB
+========================================
+
+Run these commands to see and push all branches:
+
+1. See all local branches:
+   git branch
+
+2. See all branches (local + remote):
+   git branch -a
+
+3. Push ALL branches to GitHub:
+   git push --all origin
+
+4. Push ALL tags (if any):
+   git push --tags origin
+
+========================================
+PUSH SPECIFIC BRANCH:
+========================================
+
+If you want to push a specific branch:
+
+git push -u origin BRANCH_NAME
+
+Example:
+git push -u origin Next-js-Transition
+
+========================================
+
