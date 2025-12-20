@@ -4,6 +4,12 @@ import { createServerClient } from '@/lib/supabase-server'
 export async function GET() {
   try {
     const supabase = await createServerClient()
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      )
+    }
 
     // Get tutors
     const { data: tutors, error: tutorsError } = await supabase

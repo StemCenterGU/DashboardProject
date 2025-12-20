@@ -5,6 +5,12 @@ import { SchedulingAnalytics } from '@/lib/analytics'
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerClient()
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      )
+    }
     const analytics = new SchedulingAnalytics(supabase)
 
     // Get query parameters
@@ -104,6 +110,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerClient()
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      )
+    }
     const analytics = new SchedulingAnalytics(supabase)
 
     const body = await request.json()

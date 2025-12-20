@@ -6,6 +6,12 @@ import { predictAppointments, predictPeakHours, detectAnomalies } from '@/lib/ml
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerClient()
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      )
+    }
     const analytics = new SchedulingAnalytics(supabase)
 
     const searchParams = request.nextUrl.searchParams

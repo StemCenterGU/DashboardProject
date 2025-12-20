@@ -5,6 +5,12 @@ import { SchedulingAnalytics } from '@/lib/analytics'
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerClient()
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured. Please set up Supabase environment variables.' },
+        { status: 503 }
+      )
+    }
     const analytics = new SchedulingAnalytics(supabase)
 
     // Get query parameters for filters

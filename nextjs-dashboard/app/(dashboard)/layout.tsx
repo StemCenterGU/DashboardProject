@@ -8,15 +8,17 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Check authentication - try Supabase Auth first
+  // Check authentication - try Supabase Auth first (if configured)
   let isAuthenticated = false
   
   try {
     const supabase = await createServerClient()
-    const { data: { session }, error } = await supabase.auth.getSession()
-    
-    if (session && !error) {
-      isAuthenticated = true
+    if (supabase) {
+      const { data: { session }, error } = await supabase.auth.getSession()
+      
+      if (session && !error) {
+        isAuthenticated = true
+      }
     }
   } catch (error) {
     // Supabase check failed, try custom session

@@ -16,6 +16,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createServerClient()
 
+    // If Supabase is not configured, return error
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file.' },
+        { status: 503 }
+      )
+    }
+
     // Try Supabase Auth first
     try {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -128,4 +136,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
