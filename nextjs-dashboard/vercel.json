@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/sync/wconline/scheduled",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
+

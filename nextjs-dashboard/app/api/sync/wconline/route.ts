@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
     // Initialize sync service
     const syncService = new WCOnlineSyncService(supabase)
 
-    // Perform sync
-    const result = await syncService.syncAppointments(syncDate)
+    // Perform complete sync (AVAIL + CUSTOM)
+    const result = await syncService.syncAll(syncDate)
 
     return NextResponse.json({
       success: result.success,
@@ -57,6 +57,11 @@ export async function POST(request: NextRequest) {
           fetched: result.appointments.fetched,
           synced: result.appointments.synced,
           errors: result.appointments.errors,
+        },
+        availableSlots: {
+          fetched: result.availableSlots.fetched,
+          synced: result.availableSlots.synced,
+          errors: result.availableSlots.errors,
         },
         tutors: {
           fetched: result.tutors.fetched,
@@ -70,6 +75,7 @@ export async function POST(request: NextRequest) {
         },
       },
       errors: result.errors,
+      syncTime: result.syncTime,
       timestamp: new Date().toISOString(),
     })
   } catch (error: any) {
