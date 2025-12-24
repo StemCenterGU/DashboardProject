@@ -45,8 +45,9 @@ export async function GET(request: NextRequest) {
     try {
       const { data: appointments, error: aptError } = await supabase
         .from('appointments')
-        .select('*, tutors(full_name), courses(course_name)')
+        .select('appointment_id, appointment_date, tutor_id, tutor_name, student_name, start_time, end_time, status, course_id, course_name')
         .order('appointment_date', { ascending: false })
+        .order('start_time', { ascending: false })
         .limit(50)
 
       if (!aptError && appointments) {
@@ -54,13 +55,13 @@ export async function GET(request: NextRequest) {
           logsForCollapsibleView.push({
             date: apt.appointment_date,
             tutor_id: apt.tutor_id,
-            tutor_name: apt.tutors?.full_name || '',
+            tutor_name: apt.tutor_name || 'Unknown Tutor',
             student_name: apt.student_name || '',
             start_time: apt.start_time,
             end_time: apt.end_time,
             status: apt.status || 'scheduled',
             course_id: apt.course_id,
-            course_name: apt.courses?.course_name || ''
+            course_name: apt.course_name || 'No course'
           })
         }
       }

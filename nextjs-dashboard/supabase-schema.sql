@@ -31,16 +31,8 @@ CREATE INDEX IF NOT EXISTS idx_users_active ON users(active);
 -- ============================================
 CREATE TABLE IF NOT EXISTS tutors (
     tutor_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    is_available BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(user_id)
+    tutor_name VARCHAR(255) NOT NULL UNIQUE
 );
-
--- Index for user_id lookups
-CREATE INDEX IF NOT EXISTS idx_tutors_user_id ON tutors(user_id);
-CREATE INDEX IF NOT EXISTS idx_tutors_available ON tutors(is_available);
 
 -- ============================================
 -- COURSES TABLE
@@ -65,6 +57,7 @@ CREATE INDEX IF NOT EXISTS idx_courses_active ON courses(active);
 CREATE TABLE IF NOT EXISTS appointments (
     appointment_id VARCHAR(255) PRIMARY KEY,
     tutor_id UUID NOT NULL REFERENCES tutors(tutor_id) ON DELETE CASCADE,
+    tutor_name VARCHAR(255), -- Tutor name (from Staff or Resource) stored directly for reference
     student_name VARCHAR(255) NOT NULL,
     student_email VARCHAR(255),
     course_id UUID REFERENCES courses(course_id) ON DELETE RESTRICT,
@@ -80,13 +73,13 @@ CREATE TABLE IF NOT EXISTS appointments (
     is_walk_in BOOLEAN DEFAULT false, -- Walk-In/Drop-In
     is_missed BOOLEAN DEFAULT false, -- Missed/No-Show
     is_online BOOLEAN DEFAULT false, -- Online appointment
-    focus TEXT, -- Focus field from WCOnline
+    focus TEXT, -- Focus field from WCOnline (contains "course_name - course_instructor")
     created_by VARCHAR(255), -- Created By from WCOnline
     modified_by VARCHAR(255), -- Modified By from WCOnline
     is_repeating BOOLEAN DEFAULT false, -- Repeating appointment
-    course_instructor VARCHAR(255), -- Course instructor from WCOnline
+    course_instructor VARCHAR(255), -- Course instructor from WCOnline (extracted from focus field)
     course_code VARCHAR(50), -- Course code (stored directly for reference)
-    course_name VARCHAR(255), -- Course name (stored directly for reference)
+    course_name VARCHAR(255), -- Course name (stored directly for reference, extracted from focus field)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

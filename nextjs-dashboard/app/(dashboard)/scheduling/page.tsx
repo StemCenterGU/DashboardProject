@@ -4,11 +4,100 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Calendar, Clock, Users, BookOpen, Plus, Search } from "lucide-react"
-import { useState } from "react"
+import { Calendar, Clock, Users, BookOpen, Plus, Search, Loader2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { ScheduleGrid } from "@/components/schedule-grid"
+
+interface Appointment {
+  appointment_id: string
+  tutor_name: string
+  student_name: string
+  course_name: string | null
+  appointment_date: string
+  start_time: string
+  end_time: string
+  status: string
+}
+
+interface Tutor {
+  tutor_id: string
+  tutor_name: string
+}
+
+interface Availability {
+  availability_id: string
+  tutor_id: string
+  day_of_week: number
+  start_time: string
+  end_time: string
+}
 
 export default function SchedulingPage() {
   const [activeTab, setActiveTab] = useState("schedule")
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [tutors, setTutors] = useState<Tutor[]>([])
+  const [availability, setAvailability] = useState<Availability[]>([])
+  const [loading, setLoading] = useState({ appointments: false, tutors: false, availability: false })
+
+  useEffect(() => {
+    if (activeTab === "appointments") {
+      fetchAppointments()
+    } else if (activeTab === "tutors") {
+      fetchTutors()
+    } else if (activeTab === "availability") {
+      fetchAvailability()
+    }
+  }, [activeTab])
+
+  const fetchAppointments = async () => {
+    setLoading(prev => ({ ...prev, appointments: true }))
+    try {
+      const response = await fetch("/api/scheduling/appointments?limit=50")
+      if (response.ok) {
+        const data = await response.json()
+        setAppointments(data.appointments || [])
+      }
+    } catch (error) {
+      console.error("Error fetching appointments:", error)
+    } finally {
+      setLoading(prev => ({ ...prev, appointments: false }))
+    }
+  }
+
+  const fetchTutors = async () => {
+    setLoading(prev => ({ ...prev, tutors: true }))
+    try {
+      const response = await fetch("/api/scheduling/tutors")
+      if (response.ok) {
+        const data = await response.json()
+        setTutors(data.tutors || [])
+      }
+    } catch (error) {
+      console.error("Error fetching tutors:", error)
+    } finally {
+      setLoading(prev => ({ ...prev, tutors: false }))
+    }
+  }
+
+  const fetchAvailability = async () => {
+    setLoading(prev => ({ ...prev, availability: true }))
+    try {
+      const response = await fetch("/api/scheduling/availability")
+      if (response.ok) {
+        const data = await response.json()
+        setAvailability(data.availability || [])
+      }
+    } catch (error) {
+      console.error("Error fetching availability:", error)
+    } finally {
+      setLoading(prev => ({ ...prev, availability: false }))
+    }
+  }
+
+  const getDayName = (dayOfWeek: number) => {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    return days[dayOfWeek]
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -53,33 +142,7 @@ export default function SchedulingPage() {
 
       {/* Schedule Grid View */}
       {activeTab === "schedule" && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Weekly Schedule</CardTitle>
-                <CardDescription>View and manage weekly appointment schedule</CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Input type="date" className="w-[180px]" />
-                <Button variant="outline">Refresh</Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  Weekly schedule grid will be displayed here
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Shows appointments organized by tutor and time slot
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <ScheduleGrid />
       )}
 
       {/* Appointments View */}
@@ -95,12 +158,47 @@ export default function SchedulingPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              {loading.appointments ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : appointments.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Calendar className="h-8 w-8 mx-auto mb-2" />
-                  <p>No upcoming appointments</p>
+                  <p>No appointments found</p>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-3">
+                  {appointments.map((apt) => (
+                    <div key={apt.appointment_id} className="border rounded-lg p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{apt.student_name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {apt.tutor_name} • {apt.course_name || "No course"}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">{apt.appointment_date}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {apt.start_time} - {apt.end_time}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          apt.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          apt.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                          apt.status === 'missed' || apt.status === 'no_show' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {apt.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -142,10 +240,27 @@ export default function SchedulingPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-12 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4" />
-              <p>Tutor list will be displayed here</p>
-            </div>
+            {loading.tutors ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : tutors.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4" />
+                <p>No tutors found</p>
+              </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {tutors.map((tutor) => (
+                  <div key={tutor.tutor_id} className="border rounded-lg p-4">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-muted-foreground" />
+                      <p className="font-medium">{tutor.tutor_name}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -160,10 +275,39 @@ export default function SchedulingPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-12 text-muted-foreground">
-              <Clock className="h-12 w-12 mx-auto mb-4" />
-              <p>Availability management will be displayed here</p>
-            </div>
+            {loading.availability ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : availability.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Clock className="h-12 w-12 mx-auto mb-4" />
+                <p>No availability schedules found</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {tutors.map((tutor) => {
+                  const tutorAvailability = availability.filter(avail => avail.tutor_id === tutor.tutor_id)
+                  if (tutorAvailability.length === 0) return null
+                  
+                  return (
+                    <div key={tutor.tutor_id} className="border rounded-lg p-4">
+                      <h3 className="font-semibold mb-3">{tutor.tutor_name}</h3>
+                      <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                        {tutorAvailability.map((avail) => (
+                          <div key={avail.availability_id} className="text-sm border rounded p-2">
+                            <p className="font-medium">{getDayName(avail.day_of_week)}</p>
+                            <p className="text-muted-foreground">
+                              {avail.start_time} - {avail.end_time}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

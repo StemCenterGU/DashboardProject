@@ -24,6 +24,13 @@ except ImportError:
     print("⚠️  supabase-py not installed. Install with: pip install supabase")
     print("   Will use direct HTTP requests instead")
 
+# Load environment variables FIRST (before using them)
+try:
+    from dotenv import load_dotenv
+    load_dotenv('.env.local')
+except:
+    pass
+
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
@@ -162,16 +169,97 @@ def convert_to_24_hour(time_str):
     
     return f"{hours:02d}:{minutes}"
 
-def find_or_create_tutor(supabase, tutor_name, tutor_email=None):
-    """Find or create tutor in Supabase"""
+def find_tutor_by_name(supabase, tutor_name):
+    """Find tutor_id by tutor_name from simplified tutors table (tutor_id UUID, tutor_name)"""
     if not tutor_name:
         return None
+    
+    # Normalize the tutor name (strip whitespace, handle periods)
+    tutor_name = tutor_name.strip()
+    
+    try:
+        url = SUPABASE_URL
+        key = SUPABASE_KEY
+        
+        if not url or not key:
+            return None
+        
+        headers = {
+            'apikey': key,
+            'Authorization': f'Bearer {key}',
+            'Content-Type': 'application/json'
+        }
+        
+        import urllib.parse
+        
+        # Normalize: remove all periods and extra spaces for matching
+        # "Robert T." from WCOnline should match "Robert T" in database
+        tutor_name_clean = tutor_name.strip().replace('.', '').strip()
+        tutor_normalized = tutor_name_clean.lower()
+        
+        # Try exact match first (with cleaned name, no period)
+        encoded_name_clean = urllib.parse.quote(tutor_name_clean)
+        response = requests.get(
+            f"{url}/rest/v1/tutors?tutor_name=eq.{encoded_name_clean}&select=tutor_id",
+            headers=headers
+        )
+        
+        if response.status_code == 200 and response.json():
+            return response.json()[0]['tutor_id']
+        
+        # Try case-insensitive exact match (no period) - use ilike for case-insensitive
+        response = requests.get(
+            f"{url}/rest/v1/tutors?tutor_name=ilike.{encoded_name_clean}&select=tutor_id,tutor_name&limit=50",
+            headers=headers
+        )
+        
+        if response.status_code == 200 and response.json():
+            for tutor in response.json():
+                db_name = tutor.get('tutor_name', '').strip()
+                db_normalized = db_name.lower().replace('.', '').strip()
+                
+                # Exact match after removing all periods
+                if tutor_normalized == db_normalized:
+                    return tutor.get('tutor_id')
+        
+        # Fallback: Fetch all tutors and match client-side (for edge cases)
+        # This handles cases where the query might not work due to special characters
+        response = requests.get(
+            f"{url}/rest/v1/tutors?select=tutor_id,tutor_name&limit=1000",
+            headers=headers
+        )
+        
+        if response.status_code == 200 and response.json():
+            for tutor in response.json():
+                db_name = tutor.get('tutor_name', '').strip()
+                db_normalized = db_name.lower().replace('.', '').strip()
+                
+                # Exact match after removing all periods
+                if tutor_normalized == db_normalized:
+                    return tutor.get('tutor_id')
+        
+        return None
+    except Exception as e:
+        return None
+
+def find_or_create_tutor(supabase, tutor_name, tutor_email=None):
+    """Find or create tutor in Supabase (legacy function for backward compatibility)"""
+    if not tutor_name:
+        return None
+    
+    # First try to find by name in simplified tutors table
+    tutor_id = find_tutor_by_name(supabase, tutor_name)
+    if tutor_id:
+        return tutor_id
     
     # Generate placeholder email if needed
     if not tutor_email:
         tutor_email = f"{tutor_name.lower().replace(' ', '').replace('.', '')}@tutor.gannon.edu"
     
-    if supabase.get('use_http'):
+    # Check if using HTTP mode (dict) or supabase-py client
+    use_http = isinstance(supabase, dict) and supabase.get('use_http')
+    
+    if use_http:
         # Use HTTP requests directly
         url = supabase['url']
         key = supabase['key']
@@ -262,7 +350,10 @@ def find_or_create_course(supabase, course_code=None, course_name=None):
     if not course_code and not course_name:
         return None
     
-    if supabase.get('use_http'):
+    # Check if using HTTP mode (dict) or supabase-py client
+    use_http = isinstance(supabase, dict) and supabase.get('use_http')
+    
+    if use_http:
         url = supabase['url']
         key = supabase['key']
         headers = {
@@ -308,18 +399,35 @@ def find_or_create_course(supabase, course_code=None, course_name=None):
         
         return None
     else:
-        # Use supabase-py
+        # Use HTTP requests for supabase-py client (more reliable)
+        import urllib.parse
+        url = SUPABASE_URL
+        key = SUPABASE_KEY
+        headers = {
+            'apikey': key,
+            'Authorization': f'Bearer {key}',
+            'Content-Type': 'application/json'
+        }
+        
         # Try to find by course code
         if course_code:
-            result = supabase.table('courses').select('course_id').eq('course_code', course_code.upper()).limit(1).execute()
-            if result.data and len(result.data) > 0:
-                return result.data[0]['course_id']
+            encoded_code = urllib.parse.quote(course_code.upper())
+            response = requests.get(
+                f"{url}/rest/v1/courses?course_code=eq.{encoded_code}&select=course_id&limit=1",
+                headers=headers
+            )
+            if response.status_code == 200 and response.json():
+                return response.json()[0]['course_id']
         
         # Try to find by name
         if course_name:
-            result = supabase.table('courses').select('course_id').ilike('course_name', f'%{course_name}%').limit(1).execute()
-            if result.data and len(result.data) > 0:
-                return result.data[0]['course_id']
+            encoded_name = urllib.parse.quote(course_name)
+            response = requests.get(
+                f"{url}/rest/v1/courses?course_name=ilike.*{encoded_name}*&select=course_id&limit=1",
+                headers=headers
+            )
+            if response.status_code == 200 and response.json():
+                return response.json()[0]['course_id']
         
         # Create new course
         course_data = {'active': True}
@@ -330,9 +438,18 @@ def find_or_create_course(supabase, course_code=None, course_name=None):
         elif course_code:
             course_data['course_name'] = course_code
         
-        result = supabase.table('courses').insert(course_data).select('course_id').single().execute()
-        if result.data:
-            return result.data[0]['course_id']
+        response = requests.post(
+            f"{url}/rest/v1/courses",
+            headers={
+                'apikey': key,
+                'Authorization': f'Bearer {key}',
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+            },
+            json=course_data
+        )
+        if response.status_code in [200, 201] and response.json():
+            return response.json()[0]['course_id']
         
         return None
 
@@ -407,7 +524,10 @@ def sync_available_slot(supabase, slot, date_str):
     }
     
     try:
-        if supabase.get('use_http'):
+        # Check if using HTTP mode (dict) or supabase-py client
+        use_http = isinstance(supabase, dict) and supabase.get('use_http')
+        
+        if use_http:
             url = supabase['url']
             key = supabase['key']
             headers = {
@@ -432,49 +552,61 @@ def sync_available_slot(supabase, slot, date_str):
         return False
 
 def sync_appointment(supabase, appointment, date_str):
-    """Sync a booked appointment to Supabase with all WCOnline fields"""
-    tutor_name = appointment.get('Staff or Resource', '')
-    student_name = appointment.get('Student Name', '')
-    tutor_email = appointment.get('Staff Email', '')
-    tutor_id = find_or_create_tutor(supabase, tutor_name, tutor_email)
+    """Sync a booked appointment from CUSTOM data to Supabase with checked fields only"""
+    # Extract checked fields from WCOnline CUSTOM data (booked appointments)
+    # Checked fields: Schedule Title, Staff or Resource, Appointment Date, Start Time, End Time,
+    # Walk-In/Drop-In, Missed/No-Show, Online, Focus, Created, Created By, Repeating, Course, Course instructor
     
-    if not tutor_id:
+    tutor_name = appointment.get('Staff or Resource', '').strip()
+    if not tutor_name:
+        print(f"      ⚠️  Missing 'Staff or Resource' field")
         return False
     
-    start_time = convert_to_24_hour(appointment.get('Start Time', ''))
-    end_time = convert_to_24_hour(appointment.get('End Time', ''))
+    # Skip if it's clearly not a tutor name (e.g., exam names, events)
+    skip_keywords = ['exam', 'test', 'workshop', 'seminar', 'event', 'meeting', 'readiness']
+    if any(keyword in tutor_name.lower() for keyword in skip_keywords):
+        print(f"      ⚠️  Skipping non-tutor resource: '{tutor_name}'")
+        return False
+    
+    # Find tutor by name (using simplified tutors table)
+    tutor_id = find_tutor_by_name(supabase, tutor_name)
+    if not tutor_id:
+        print(f"      ⚠️  Tutor '{tutor_name}' not found in tutors table")
+        return False
+    
+    # Extract checked time fields
+    start_time_raw = appointment.get('Start Time', '')
+    end_time_raw = appointment.get('End Time', '')
+    start_time = convert_to_24_hour(start_time_raw)
+    end_time = convert_to_24_hour(end_time_raw)
     
     if not start_time or not end_time or not re.match(r'^\d{2}:\d{2}$', start_time):
+        print(f"      ⚠️  Invalid time format: Start='{start_time_raw}' -> '{start_time}', End='{end_time_raw}' -> '{end_time}'")
         return False
     
-    # Extract all WCOnline fields (try multiple possible field names for flexibility)
-    course_code = (appointment.get('Course Code') or 
-                   appointment.get('Course') or 
-                   appointment.get('course_code') or 
-                   '')
-    course_name = (appointment.get('Course Name') or 
-                   appointment.get('Course') or 
-                   appointment.get('course_name') or 
-                   '')
-    course_instructor = (appointment.get('Course Instructor') or 
-                         appointment.get('Course instructor') or 
-                         appointment.get('course_instructor') or 
-                         '')
+    # Extract course information from focus field
+    # Format: "course_name - course_instructor"
+    focus_field = appointment.get('Focus') or appointment.get('focus') or ''
+    course_name = ''
+    course_instructor = ''
     
-    # Find or create course
-    course_id = None
-    if course_code or course_name:
-        course_id = find_or_create_course(supabase, course_code, course_name)
+    if focus_field and '-' in focus_field:
+        # Split by "-" to get course_name (before) and course_instructor (after)
+        parts = focus_field.split('-', 1)
+        course_name = parts[0].strip() if len(parts) > 0 else ''
+        course_instructor = parts[1].strip() if len(parts) > 1 else ''
+    else:
+        # Fallback to direct fields if focus doesn't have the format
+        course_name = appointment.get('Course Name') or appointment.get('Course') or ''
+        course_instructor = appointment.get('Course Instructor') or appointment.get('Course instructor') or ''
     
-    # Determine status based on Missed/No-Show (try multiple field names)
+    # Note: course_id column removed from appointments table
+    # Course information is stored in course_name and course_instructor fields instead
+    
+    # Extract checked Missed/No-Show field
     status = 'scheduled'
     is_missed = False
-    missed_value = (appointment.get('Missed/No-Show') or 
-                   appointment.get('Missed/No Show') or 
-                   appointment.get('Missed') or 
-                   appointment.get('No-Show') or 
-                   appointment.get('No Show') or 
-                   '')
+    missed_value = appointment.get('Missed/No-Show') or appointment.get('Missed/No Show') or ''
     if missed_value and str(missed_value).lower() not in ['', 'false', '0', 'no']:
         is_missed = True
         if 'no-show' in str(missed_value).lower() or 'no show' in str(missed_value).lower():
@@ -482,11 +614,10 @@ def sync_appointment(supabase, appointment, date_str):
         else:
             status = 'missed'
     
-    # Generate appointment ID (use WCOnline ID if available)
+    # Generate appointment ID
     appointment_id = (appointment.get('Appointment ID') or 
                      appointment.get('AppointmentID') or 
-                     appointment.get('ID') or 
-                     appointment.get('id') or
+                     appointment.get('ID') or
                      f"{tutor_id}-{date_str}-{start_time}".replace(':', '-').replace(' ', '-'))
     
     # Calculate duration in hours
@@ -504,61 +635,51 @@ def sync_appointment(supabase, appointment, date_str):
         if isinstance(value, bool):
             return value
         if isinstance(value, str):
-            return value.lower() in ['true', 'yes', '1', 'y']
+            # WCOnline writes "ONLINE" for online appointments
+            return value.lower() in ['true', 'yes', '1', 'y', 'online']
         return bool(value)
     
-    # Build appointment data with all WCOnline fields (using flexible field name matching)
+    # Extract student name: Use "Created By" if it doesn't match tutor name
+    created_by = appointment.get('Created By') or ''
+    student_name_field = appointment.get('Student Name') or appointment.get('student_name') or ''
+    
+    # If "Created By" exists and doesn't match tutor name, use it as student name
+    if created_by and created_by.strip().lower() != tutor_name.strip().lower():
+        student_name = created_by.strip()
+    elif student_name_field:
+        student_name = student_name_field.strip()
+    else:
+        student_name = 'Unknown'
+    
+    # Build appointment data with ONLY checked fields from the image
     appointment_data = {
         'appointment_id': appointment_id,
         'tutor_id': tutor_id,
-        'student_name': student_name,
-        'student_email': (appointment.get('Student Email') or 
-                         appointment.get('student_email') or 
-                         ''),
-        'course_id': course_id,
+        'tutor_name': tutor_name.strip(),  # Store tutor name directly from "Staff or Resource"
+        'student_name': student_name,  # Extracted from "Created By" if different from tutor
+        # Note: course_id and student_email removed - not in appointments table schema
         'appointment_date': date_str,
         'start_time': start_time,
         'end_time': end_time,
         'duration': duration,
         'status': status,
-        'notes': (appointment.get('Notes') or 
-                 appointment.get('notes') or 
-                 appointment.get('Focus') or 
-                 appointment.get('focus') or 
-                 ''),
         'source': 'wconline',
-        # WCOnline specific fields
-        'schedule_title': (appointment.get('Schedule Title') or 
-                          appointment.get('schedule_title') or 
-                          ''),
-        'is_walk_in': safe_bool(appointment.get('Walk-In/Drop-In') or 
-                               appointment.get('Walk-In') or 
-                               appointment.get('Walk In') or
-                               appointment.get('walk_in') or
-                               False),
-        'is_missed': is_missed,
-        'is_online': safe_bool(appointment.get('Online') or 
-                              appointment.get('online') or
-                              False),
-        'focus': (appointment.get('Focus') or 
-                 appointment.get('focus') or 
-                 ''),
-        'created_by': (appointment.get('Created By') or 
-                      appointment.get('created_by') or 
-                      ''),
-        'modified_by': (appointment.get('Modified By') or 
-                       appointment.get('modified_by') or 
-                       ''),
-        'is_repeating': safe_bool(appointment.get('Repeating') or 
-                                 appointment.get('repeating') or
-                                 False),
-        'course_instructor': course_instructor,
-        'course_code': course_code.upper() if course_code else None,
-        'course_name': course_name if course_name else None,
+        # Checked WCOnline fields only:
+        'schedule_title': appointment.get('Schedule Title') or '',  # ✓ Schedule Title
+        'is_walk_in': safe_bool(appointment.get('Walk-In/Drop-In')),  # ✓ Walk-In/Drop-In
+        'is_missed': is_missed,  # ✓ Missed/No-Show
+        'is_online': safe_bool(appointment.get('Online')),  # ✓ Online
+        'focus': focus_field,  # ✓ Focus (original field, contains "course_name - course_instructor")
+        'is_repeating': safe_bool(appointment.get('Repeating')),  # ✓ Repeating
+        'course_instructor': course_instructor,  # ✓ Course instructor (extracted from focus)
+        'course_name': course_name if course_name else None,  # ✓ Course (extracted from focus)
     }
     
     try:
-        if supabase.get('use_http'):
+        # Check if using HTTP mode (dict) or supabase-py client
+        use_http = isinstance(supabase, dict) and supabase.get('use_http')
+        
+        if use_http:
             url = supabase['url']
             key = supabase['key']
             headers = {
@@ -572,14 +693,18 @@ def sync_appointment(supabase, appointment, date_str):
                 headers=headers,
                 json=appointment_data
             )
+            if response.status_code not in [200, 201]:
+                print(f"      ⚠️  Failed to sync appointment {appointment_id}: {response.status_code} - {response.text[:100]}")
             return response.status_code in [200, 201]
         else:
+            # Use supabase-py client
             result = supabase.table('appointments').upsert(
                 appointment_data,
                 on_conflict='appointment_id'
             ).execute()
             return True
     except Exception as e:
+        print(f"      ⚠️  Error syncing appointment {appointment_id}: {e}")
         return False
 
 def check_existing_data(supabase, date_str):
@@ -588,7 +713,10 @@ def check_existing_data(supabase, date_str):
     has_existing_appts = False
     
     try:
-        if supabase.get('use_http'):
+        # Check if using HTTP mode (dict) or supabase-py client
+        use_http = isinstance(supabase, dict) and supabase.get('use_http')
+        
+        if use_http:
             url = supabase['url']
             key = supabase['key']
             headers = {
@@ -636,140 +764,94 @@ def sync_date_to_supabase(date, supabase):
     
     # Check if old data exists in database
     has_existing_slots, has_existing_appts = check_existing_data(supabase, date_str)
-    if has_existing_slots:
-        print(f"ℹ️  Found existing CUSTOM slots in database")
     if has_existing_appts:
-        print(f"ℹ️  Found existing AVAIL appointments in database")
+        print(f"ℹ️  Found existing appointments in database")
     
     # Track fetch success and new data
     custom_fetch_success = False
-    avail_fetch_success = False
     has_new_custom_data = False
-    has_new_avail_data = False
-    custom_slots = []
-    avail_appointments = []
+    custom_appointments = []
     
-    # Fetch CUSTOM data (available slots) FIRST
-    print("\n📡 Fetching CUSTOM data...")
+    # Fetch CUSTOM data (booked appointments) - this contains the checked fields
+    print("\n📡 Fetching CUSTOM data (booked appointments)...")
     try:
         custom_data = fetch_wconline_data('CUSTOM', date)
         custom_fetch_success = True
-        custom_slots = filter_stem_center(custom_data if isinstance(custom_data, list) else [])
-        if len(custom_slots) > 0:
+        custom_appointments = filter_stem_center(custom_data if isinstance(custom_data, list) else [])
+        if len(custom_appointments) > 0:
             has_new_custom_data = True
-            print(f"✅ Found {len(custom_slots)} CUSTOM slots")
+            print(f"✅ Found {len(custom_appointments)} booked appointments")
         else:
-            print(f"ℹ️  API returned 0 CUSTOM slots")
+            print(f"ℹ️  API returned 0 appointments")
             # If fetch succeeded but no data, and old data exists, keep old data
-            if has_existing_slots:
-                print(f"💾 Keeping existing CUSTOM slots (API returned empty but old data exists)")
+            if has_existing_appts:
+                print(f"💾 Keeping existing appointments (API returned empty but old data exists)")
     except Exception as e:
         print(f"❌ Error fetching CUSTOM data: {e}")
         print(f"ℹ️  Keeping existing data for this date")
     
-    # Wait between requests
-    time.sleep(15)
-    
-    # Fetch AVAIL data (booked appointments) - only for future dates
-    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-    if date_obj >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0):
-        print("\n📡 Fetching AVAIL data...")
-        try:
-            avail_data = fetch_wconline_data('AVAIL', date)
-            avail_fetch_success = True
-            avail_appointments = filter_stem_center(avail_data if isinstance(avail_data, list) else [])
-            if len(avail_appointments) > 0:
-                has_new_avail_data = True
-                print(f"✅ Found {len(avail_appointments)} AVAIL appointments")
-            else:
-                print(f"ℹ️  API returned 0 AVAIL appointments")
-                # If fetch succeeded but no data, and old data exists, keep old data
-                if has_existing_appts:
-                    print(f"💾 Keeping existing AVAIL appointments (API returned empty but old data exists)")
-        except Exception as e:
-            print(f"❌ Error fetching AVAIL data: {e}")
-            print(f"ℹ️  Keeping existing data for this date")
-    else:
-        print("\n⏭️  Skipping AVAIL (past date - no appointments available for booking)")
-    
     # CRITICAL: Only delete old data if we have NEW data (len > 0) to replace it
     # If fetch succeeded but returned 0 results, DO NOT delete old data
-    # Rule: has_new_custom_data is True ONLY if len(custom_slots) > 0
-    should_replace_custom = has_new_custom_data and len(custom_slots) > 0
-    should_replace_avail = has_new_avail_data and len(avail_appointments) > 0
+    should_replace = has_new_custom_data and len(custom_appointments) > 0
     
     # Additional safeguard: Never delete if fetch succeeded but returned empty
-    if custom_fetch_success and len(custom_slots) == 0:
-        should_replace_custom = False
-        print(f"🔒 Safeguard: Fetch succeeded but returned 0 CUSTOM slots - NOT deleting old data")
+    if custom_fetch_success and len(custom_appointments) == 0:
+        should_replace = False
+        print(f"🔒 Safeguard: Fetch succeeded but returned 0 appointments - NOT deleting old data")
     
-    if avail_fetch_success and len(avail_appointments) == 0:
-        should_replace_avail = False
-        print(f"🔒 Safeguard: Fetch succeeded but returned 0 AVAIL appointments - NOT deleting old data")
-    
-    if should_replace_custom or should_replace_avail:
-        print("\n🗑️  Replacing old data with new data...")
+    if should_replace:
+        print("\n🗑️  Replacing old appointments with new data...")
         try:
-            if supabase.get('use_http'):
+            # Check if using HTTP mode (dict) or supabase-py client
+            use_http = isinstance(supabase, dict) and supabase.get('use_http')
+            
+            if use_http:
                 url = supabase['url']
                 key = supabase['key']
                 headers = {
                     'apikey': key,
                     'Authorization': f'Bearer {key}'
                 }
-                if should_replace_custom:
-                    print(f"   Deleting old CUSTOM slots...")
-                    requests.delete(
-                        f"{url}/rest/v1/available_slots?slot_date=eq.{date_str}&source=eq.wconline",
-                        headers=headers
-                    )
-                if should_replace_avail:
-                    print(f"   Deleting old AVAIL appointments...")
-                    requests.delete(
-                        f"{url}/rest/v1/appointments?appointment_date=eq.{date_str}&source=eq.wconline",
-                        headers=headers
-                    )
+                print(f"   Deleting old appointments...")
+                response = requests.delete(
+                    f"{url}/rest/v1/appointments?appointment_date=eq.{date_str}&source=eq.wconline",
+                    headers=headers
+                )
+                if response.status_code in [200, 204]:
+                    print("✅ Old data deleted")
+                else:
+                    print(f"⚠️  Delete response: {response.status_code}")
             else:
-                if should_replace_custom:
-                    print(f"   Deleting old CUSTOM slots...")
-                    supabase.table('available_slots').delete().eq('slot_date', date_str).eq('source', 'wconline').execute()
-                if should_replace_avail:
-                    print(f"   Deleting old AVAIL appointments...")
-                    supabase.table('appointments').delete().eq('appointment_date', date_str).eq('source', 'wconline').execute()
-            print("✅ Old data deleted")
+                print(f"   Deleting old appointments...")
+                supabase.table('appointments').delete().eq('appointment_date', date_str).eq('source', 'wconline').execute()
+                print("✅ Old data deleted")
         except Exception as e:
             print(f"⚠️ Error deleting old data: {e}")
     else:
         # No replacement happening - explain why
         print(f"\n💾 Keeping existing data for this date:")
-        if custom_fetch_success and len(custom_slots) == 0:
-            print(f"   - CUSTOM fetch succeeded but returned 0 results - NOT deleting old data")
+        if custom_fetch_success and len(custom_appointments) == 0:
+            print(f"   - Fetch succeeded but returned 0 results - NOT deleting old data")
         elif not custom_fetch_success:
-            print(f"   - CUSTOM fetch failed - keeping existing data")
-        
-        if date_obj >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0):
-            if avail_fetch_success and len(avail_appointments) == 0:
-                print(f"   - AVAIL fetch succeeded but returned 0 results - NOT deleting old data")
-            elif not avail_fetch_success:
-                print(f"   - AVAIL fetch failed - keeping existing data")
+            print(f"   - Fetch failed - keeping existing data")
     
-    # Sync CUSTOM slots (only if we have new data)
+    # Sync CUSTOM appointments (only if we have new data)
     if has_new_custom_data:
-        print(f"\n💾 Syncing {len(custom_slots)} CUSTOM slots...")
-        synced_slots = 0
-        for slot in custom_slots:
-            if sync_available_slot(supabase, slot, date_str):
-                synced_slots += 1
-        print(f"✅ Synced {synced_slots}/{len(custom_slots)} slots")
-    
-    # Sync AVAIL appointments (only if we have new data)
-    if has_new_avail_data:
-        print(f"\n💾 Syncing {len(avail_appointments)} AVAIL appointments...")
+        print(f"\n💾 Syncing {len(custom_appointments)} booked appointments...")
         synced_appts = 0
-        for appointment in avail_appointments:
+        failed_count = 0
+        for idx, appointment in enumerate(custom_appointments, 1):
+            tutor_name = appointment.get('Staff or Resource', 'Unknown')
+            print(f"   [{idx}/{len(custom_appointments)}] {tutor_name}...", end=' ')
             if sync_appointment(supabase, appointment, date_str):
                 synced_appts += 1
-        print(f"✅ Synced {synced_appts}/{len(avail_appointments)} appointments")
+                print("✅")
+            else:
+                failed_count += 1
+                print("❌")
+        print(f"\n✅ Synced {synced_appts}/{len(custom_appointments)} appointments")
+        if failed_count > 0:
+            print(f"❌ Failed: {failed_count} appointments")
     
     print(f"\n✅ Completed sync for {date_str}")
 
@@ -795,32 +877,43 @@ if __name__ == "__main__":
         print("\n❌ Cannot proceed without Supabase connection")
         sys.exit(1)
     
-    # Parse arguments
+    # Parse arguments - accept specific dates (no hardcoded ranges)
     if len(sys.argv) < 2:
         print("Usage:")
-        print("  python sync-wconline.py <date>              # Single date (YYYY-MM-DD)")
-        print("  python sync-wconline.py <start> <end>       # Date range")
-        print("  python sync-wconline.py --today             # Today + 13 days")
+        print("  python sync-wconline.py <date>                    # Single date (YYYY-MM-DD)")
+        print("  python sync-wconline.py <date1> <date2> ...        # Multiple specific dates")
+        print("  python sync-wconline.py <start> <end>              # Date range (YYYY-MM-DD)")
         print("\nExample:")
         print("  python sync-wconline.py 2025-01-15")
+        print("  python sync-wconline.py 2025-01-15 2025-01-16 2025-01-17")
         print("  python sync-wconline.py 2025-01-01 2025-01-14")
         sys.exit(1)
     
-    if sys.argv[1] == "--today":
-        start_date = datetime.now()
-        end_date = start_date + timedelta(days=13)
-        sync_date_range(start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"), supabase)
-    elif len(sys.argv) == 2:
-        # Single date - fetch 2 weeks
-        start_date = datetime.strptime(sys.argv[1], "%Y-%m-%d")
-        end_date = start_date + timedelta(days=13)
-        sync_date_range(sys.argv[1], end_date.strftime("%Y-%m-%d"), supabase)
+    if len(sys.argv) == 2:
+        # Single date
+        sync_date_to_supabase(sys.argv[1], supabase)
     elif len(sys.argv) == 3:
-        # Date range
-        sync_date_range(sys.argv[1], sys.argv[2], supabase)
+        # Check if it's a date range (two dates) or two separate dates
+        try:
+            date1 = datetime.strptime(sys.argv[1], "%Y-%m-%d")
+            date2 = datetime.strptime(sys.argv[2], "%Y-%m-%d")
+            # If second date is after first, treat as range
+            if date2 > date1:
+                sync_date_range(sys.argv[1], sys.argv[2], supabase)
+            else:
+                # Two separate dates
+                sync_date_to_supabase(sys.argv[1], supabase)
+                time.sleep(2)
+                sync_date_to_supabase(sys.argv[2], supabase)
+        except ValueError:
+            print("❌ Invalid date format. Use YYYY-MM-DD")
+            sys.exit(1)
     else:
-        print("Invalid arguments")
-        sys.exit(1)
+        # Multiple specific dates
+        for date_arg in sys.argv[1:]:
+            sync_date_to_supabase(date_arg, supabase)
+            if date_arg != sys.argv[-1]:  # Don't sleep after last date
+                time.sleep(2)
     
     print("\n✨ All done!")
 

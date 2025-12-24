@@ -52,6 +52,7 @@ export default function ChartsPage() {
   const [summaryStats, setSummaryStats] = useState<SummaryStats | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [courseViewType, setCourseViewType] = useState<"pie" | "bar" | "table">("bar")
 
   // Calculate date range
   const getDateRange = () => {
@@ -153,6 +154,21 @@ export default function ChartsPage() {
   }
 
   const rechartsData = getRechartsData()
+
+  // Get course popularity data sorted by value
+  const getCoursePopularityData = () => {
+    if (!chartData || selectedChart !== 'course_popularity') return []
+    
+    const total = chartData.summary?.total || 0
+    return rechartsData
+      .map(item => ({
+        ...item,
+        percentage: total > 0 ? ((item.value / total) * 100).toFixed(1) : '0.0'
+      }))
+      .sort((a, b) => b.value - a.value)
+  }
+
+  const courseData = getCoursePopularityData()
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -272,6 +288,18 @@ export default function ChartsPage() {
                   <span className="text-muted-foreground">Total:</span>
                   <span className="font-medium">{chartData.summary.total}</span>
                 </div>
+                {selectedChart === 'course_popularity' && courseData.length > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Top Course:</span>
+                      <span className="font-medium">{courseData[0].fullName}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Top Course Share:</span>
+                      <span className="font-medium">{courseData[0].percentage}%</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Average:</span>
                   <span className="font-medium">{chartData.summary.average.toFixed(1)}</span>
@@ -291,10 +319,39 @@ export default function ChartsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Chart Visualization</CardTitle>
-            <CardDescription>
-              {selectedChart.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Chart Visualization</CardTitle>
+                <CardDescription>
+                  {selectedChart.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                </CardDescription>
+              </div>
+              {selectedChart === 'course_popularity' && (
+                <div className="flex gap-2">
+                  <Button
+                    variant={courseViewType === 'bar' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCourseViewType('bar')}
+                  >
+                    Bar
+                  </Button>
+                  <Button
+                    variant={courseViewType === 'pie' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCourseViewType('pie')}
+                  >
+                    Pie
+                  </Button>
+                  <Button
+                    variant={courseViewType === 'table' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCourseViewType('table')}
+                  >
+                    Table
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -321,10 +378,70 @@ export default function ChartsPage() {
                   <p className="text-sm text-muted-foreground">No data available</p>
                 </div>
               </div>
+            ) : selectedChart === 'course_popularity' && courseViewType === 'table' ? (
+              <div className="space-y-4">
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="text-left p-3 font-semibold text-sm">Rank</th>
+                        <th className="text-left p-3 font-semibold text-sm">Course</th>
+                        <th className="text-right p-3 font-semibold text-sm">Appointments</th>
+                        <th className="text-right p-3 font-semibold text-sm">Percentage</th>
+                        <th className="text-right p-3 font-semibold text-sm w-32">Visual</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {courseData.map((course, index) => {
+                        const maxValue = courseData[0]?.value || 1
+                        const barWidth = (course.value / maxValue) * 100
+                        return (
+                          <tr key={index} className="border-t hover:bg-muted/50 transition-colors">
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                {index < 3 && (
+                                  <span className={`text-lg ${
+                                    index === 0 ? 'text-yellow-500' :
+                                    index === 1 ? 'text-gray-400' :
+                                    'text-orange-600'
+                                  }`}>
+                                    {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                                  </span>
+                                )}
+                                <span className="font-medium text-muted-foreground">#{index + 1}</span>
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <div className="font-medium">{course.fullName}</div>
+                            </td>
+                            <td className="p-3 text-right font-semibold">{course.value}</td>
+                            <td className="p-3 text-right text-muted-foreground">{course.percentage}%</td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-primary rounded-full transition-all"
+                                    style={{ width: `${barWidth}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {courseData.length > 0 && (
+                  <div className="text-sm text-muted-foreground text-center">
+                    Total: {chartData?.summary?.total || 0} appointments across {courseData.length} courses
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  {selectedChart === 'appointments_by_status' || selectedChart === 'course_popularity' ? (
+                  {selectedChart === 'appointments_by_status' ? (
                     <PieChart>
                       <Pie
                         data={rechartsData}
@@ -343,6 +460,58 @@ export default function ChartsPage() {
                       <Tooltip />
                       <Legend />
                     </PieChart>
+                  ) : selectedChart === 'course_popularity' && courseViewType === 'pie' ? (
+                    <PieChart>
+                      <Pie
+                        data={courseData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent, value }) => 
+                          `${name.length > 15 ? name.substring(0, 15) + '...' : name}\n${value} (${(percent * 100).toFixed(1)}%)`
+                        }
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {courseData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: any, name: any, props: any) => [
+                          `${value} appointments (${props.payload.percentage}%)`,
+                          props.payload.fullName
+                        ]}
+                      />
+                      <Legend 
+                        formatter={(value, entry: any) => `${entry.payload.fullName} (${entry.payload.percentage}%)`}
+                      />
+                    </PieChart>
+                  ) : selectedChart === 'course_popularity' && courseViewType === 'bar' ? (
+                    <BarChart data={courseData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis 
+                        dataKey="fullName" 
+                        type="category"
+                        width={150}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip 
+                        formatter={(value: any, name: any, props: any) => [
+                          `${value} appointments (${props.payload.percentage}%)`,
+                          props.payload.fullName
+                        ]}
+                        contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', border: '1px solid #ccc' }}
+                      />
+                      <Legend />
+                      <Bar dataKey="value" fill="#8884d8" radius={[0, 4, 4, 0]}>
+                        {courseData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
                   ) : selectedChart === 'daily_appointments' ? (
                     <LineChart data={rechartsData}>
                       <CartesianGrid strokeDasharray="3 3" />

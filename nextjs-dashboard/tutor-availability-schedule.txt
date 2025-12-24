@@ -1,0 +1,476 @@
+TUTOR AVAILABILITY SCHEDULE
+
+================================================================================
+
+Aizirek A:
+
+  - Thursday 5:00PM - 6:00PM
+
+Alix A:
+
+  - Thursday 2:00PM - 4:00PM
+
+  - Friday 2:00PM - 4:00PM
+
+Avish M:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Monday 02:00PM - 04:00PM
+
+  - Monday 06:00PM - 08:00PM
+
+  - Tuesday 06:00PM - 08:00PM
+
+  - Wednesday 02:00PM - 04:00PM
+
+  - Wednesday 06:00PM - 08:00PM
+
+  - Thursday 06:00PM - 08:00PM
+
+  - Friday 02:00PM - 05:00PM
+
+Bailey H:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Monday 02:00PM - 03:00PM
+
+  - Wednesday 05:00PM - 07:00PM
+
+  - Thursday 03:00PM - 04:00PM
+
+Blossom A:
+
+  - Monday 05:00PM - 08:00PM
+
+  - Tuesday 05:00PM - 08:00PM
+
+  - Wednesday 05:00PM - 08:00PM
+
+  - Thursday 05:00PM - 07:00PM
+
+  - Friday 02:00PM - 03:00PM
+
+Camryn B:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Monday 10:00AM - 11:30AM
+
+  - Monday 07:00PM - 08:00PM
+
+  - Wednesday 10:00AM - 11:30AM
+
+  - Wednesday 06:00PM - 08:00PM
+
+  - Thursday 11:30AM - 12:30PM
+
+  - Thursday 06:00PM - 08:00PM
+
+Clara B:
+
+  - Sunday 2:00PM - 5:00PM
+
+  - Monday 2:00PM - 5:00PM
+
+Claudia O:
+
+  - Wednesday 2:00PM - 6:00PM
+
+Elizabeth H:
+
+  - Sunday 2:00PM - 4:00PM
+
+  - Wednesday 2:00PM - 3:00PM
+
+  - Thursday 3:00PM - 4:00PM
+
+Emily B:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Monday 02:00PM - 03:00PM
+
+  - Monday 07:00PM - 08:00PM
+
+  - Tuesday 09:30AM - 11:30AM
+
+  - Tuesday 07:00PM - 08:00PM
+
+  - Wednesday 07:00PM - 08:00PM
+
+  - Thursday 09:30AM - 12:30PM
+
+  - Thursday 07:00PM - 08:00PM
+
+  - Friday 02:00PM - 03:00PM
+
+Ethan W:
+
+  - Sunday 2:00PM - 5:00PM
+
+  - Thursday 4:00PM - 6:00PM
+
+Eva S:
+
+  - Tuesday 4:00PM - 6:00PM
+
+  - Wednesday 5:00PM - 7:00PM
+
+Glory N:
+
+  - Sunday 04:00PM - 06:00PM
+
+  - Monday 04:00PM - 05:00PM
+
+  - Tuesday 04:00PM - 05:00PM
+
+  - Wednesday 03:00PM - 05:00PM
+
+  - Thursday 04:00PM - 05:00PM
+
+Gonzalo P:
+
+  - Sunday 4:00PM - 8:00PM
+
+  - Monday 4:00PM - 6:00PM
+
+Hannah P:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Monday 03:00PM - 05:00PM
+
+  - Friday 02:00PM - 05:00PM
+
+Hiver N:
+
+  - Monday 09:00AM - 12:00PM
+
+  - Wednesday 09:00AM - 10:30AM
+
+  - Wednesday 04:00PM - 08:00PM
+
+  - Friday 02:00PM - 05:00PM
+
+Hoang T:
+
+  - Sunday 02:00PM - 07:00PM
+
+  - Monday 10:00AM - 11:00AM
+
+  - Monday 02:00PM - 04:00PM
+
+  - Monday 06:00PM - 08:00PM
+
+  - Tuesday 06:00PM - 08:00PM
+
+  - Wednesday 10:30AM - 12:00PM
+
+  - Wednesday 02:00PM - 04:00PM
+
+  - Wednesday 07:00PM - 08:00PM
+
+  - Thursday 07:00PM - 08:00PM
+
+  - Friday 02:00PM - 05:00PM
+
+Hope T:
+
+  - Sunday 02:00PM - 05:00PM
+
+  - Monday 06:00PM - 08:00PM
+
+  - Tuesday 06:00PM - 08:00PM
+
+  - Wednesday 06:00PM - 08:00PM
+
+  - Thursday 06:00PM - 07:00PM
+
+Issac W:
+
+  - Monday 2:00PM - 6:00PM
+
+  - Friday 3:00PM - 5:00PM
+
+Izzy G:
+
+  - Sunday 4:00PM - 6:00PM
+
+  - Monday 5:00PM - 8:00PM
+
+  - Tuesday 5:00PM - 8:00PM
+
+  - Wednesday 5:00PM - 8:00PM
+
+  - Thursday 5:00PM - 8:00PM
+
+  - Friday 3:00PM - 5:00PM
+
+Jonathan H:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Monday 07:00PM - 08:00PM
+
+  - Tuesday 02:00PM - 03:00PM
+
+  - Tuesday 07:00PM - 08:00PM
+
+  - Wednesday 07:00PM - 08:00PM
+
+  - Thursday 09:30AM - 11:30AM
+
+  - Thursday 07:00PM - 08:00PM
+
+  - Friday 02:00PM - 03:00PM
+
+Juhi M:
+
+  - Friday 3:00PM - 5:00PM
+
+Kara B:
+
+  - Sunday 02:00PM - 06:00PM
+
+  - Monday 05:00PM - 08:00PM
+
+  - Tuesday 02:00PM - 08:00PM
+
+  - Wednesday 03:00PM - 08:00PM
+
+  - Thursday 02:00PM - 08:00PM
+
+  - Friday 02:00PM - 05:00PM
+
+Kayla T:
+
+  - Sunday 02:00PM - 05:00PM
+
+  - Monday 04:00PM - 06:00PM
+
+  - Thursday 02:00PM - 04:00PM
+
+Kensy A:
+
+  - Sunday 5:00PM - 8:00PM
+
+  - Monday 6:00PM - 8:00PM
+
+  - Thursday 2:00PM - 5:00PM
+
+Khang M:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Monday 02:00PM - 04:00PM
+
+  - Monday 06:00PM - 08:00PM
+
+  - Tuesday 05:00PM - 08:00PM
+
+  - Wednesday 09:00AM - 12:00PM
+
+  - Wednesday 02:00PM - 04:00PM
+
+  - Wednesday 06:00PM - 08:00PM
+
+  - Thursday 05:00PM - 08:00PM
+
+  - Friday 02:00PM - 03:00PM
+
+Khanh L:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Tuesday 02:00PM - 08:00PM
+
+  - Thursday 02:00PM - 08:00PM
+
+Lili U:
+
+  - Monday 6:00PM - 8:00PM
+
+Lilly M:
+
+  - Monday 3:00PM - 5:00PM
+
+  - Wednesday 3:00PM - 5:00PM
+
+  - Friday 2:00PM - 3:00PM
+
+Maddy E:
+
+  - Monday 6:00PM - 8:00PM
+
+Makalya L:
+
+  - Tuesday 07:00PM - 08:00PM
+
+  - Thursday 11:30AM - 12:30PM
+
+  - Thursday 02:00PM - 05:00PM
+
+Maria M:
+
+  - Monday 02:00PM - 04:00PM
+
+  - Tuesday 11:00AM - 12:00PM
+
+  - Wednesday 02:00PM - 04:00PM
+
+  - Friday 02:00PM - 04:00PM
+
+Matthew T:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Tuesday 11:00AM - 12:00PM
+
+  - Tuesday 02:00PM - 08:00PM
+
+  - Thursday 11:00AM - 12:30PM
+
+  - Thursday 02:00PM - 07:00PM
+
+My N:
+
+  - Tuesday 5:00PM - 8:00PM
+
+  - Thursday 5:00PM - 8:00PM
+
+Natalie H:
+
+  - Sunday 02:00PM - 06:00PM
+
+  - Monday 05:00PM - 07:00PM
+
+  - Wednesday 05:00PM - 08:00PM
+
+  - Thursday 05:00PM - 07:00PM
+
+  - Friday 02:00PM - 03:00PM
+
+Ojus D:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Monday 05:00PM - 08:00PM
+
+  - Tuesday 04:00PM - 08:00PM
+
+  - Wednesday 05:00PM - 08:00PM
+
+  - Thursday 03:00PM - 08:00PM
+
+  - Friday 02:00PM - 04:00PM
+
+Pedro A:
+
+  - Sunday 2:00PM - 5:00PM
+
+Phuong T:
+
+  - Monday 2:00PM - 3:00PM
+
+  - Tuesday 6:00PM - 8:00PM
+
+  - Wednesday 5:00PM - 6:00PM
+
+  - Thursday 3:00PM - 5:00PM
+
+Prashriti A:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Monday 05:00PM - 08:00PM
+
+  - Tuesday 07:00PM - 08:00PM
+
+  - Wednesday 05:00PM - 08:00PM
+
+  - Thursday 05:00PM - 08:00PM
+
+  - Friday 02:00PM - 05:00PM
+
+Princess M:
+
+  - Sunday 6:00PM - 8:00PM
+
+  - Monday 7:00PM - 8:00PM
+
+  - Thursday 6:00PM - 8:00PM
+
+Quoc N:
+
+  - Sunday 04:00PM - 08:00PM
+
+  - Monday 03:00PM - 04:00PM
+
+  - Monday 06:00PM - 08:00PM
+
+  - Tuesday 04:00PM - 07:00PM
+
+  - Wednesday 03:00PM - 04:00PM
+
+  - Wednesday 06:00PM - 08:00PM
+
+  - Thursday 03:00PM - 07:00PM
+
+  - Friday 02:00PM - 05:00PM
+
+Rajih M:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Monday 10:00AM - 12:00PM
+
+  - Monday 03:00PM - 08:00PM
+
+  - Tuesday 02:00PM - 04:00PM
+
+  - Tuesday 06:00PM - 08:00PM
+
+  - Wednesday 10:00AM - 12:00PM
+
+  - Wednesday 05:00PM - 08:00PM
+
+  - Thursday 02:00PM - 04:00PM
+
+  - Thursday 06:00PM - 08:00PM
+
+  - Friday 02:00PM - 05:00PM
+
+Robert T:
+
+  - Sunday 02:00PM - 08:00PM
+
+  - Tuesday 02:00PM - 03:00PM
+
+  - Thursday 02:00PM - 03:00PM
+
+  - Friday 02:00PM - 03:00PM
+
+Zaid A:
+
+  - Sunday 2:00PM - 8:00PM
+
+  - Monday 5:00PM - 8:00PM
+
+  - Tuesday 2:00PM - 8:00PM
+
+  - Wednesday 2:00PM - 8:00PM
+
+  - Thursday 2:00PM - 8:00PM
+
+  - Friday 3:00PM - 5:00PM
+
+Zoe G:
+
+  - Tuesday 6:00PM - 8:00PM
+
+  - Wednesday 6:00PM - 8:00PM
+
+  - Thursday 6:00PM - 8:00PM
+
