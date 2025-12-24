@@ -67,14 +67,26 @@ CREATE TABLE IF NOT EXISTS appointments (
     tutor_id UUID NOT NULL REFERENCES tutors(tutor_id) ON DELETE CASCADE,
     student_name VARCHAR(255) NOT NULL,
     student_email VARCHAR(255),
-    course_id UUID NOT NULL REFERENCES courses(course_id) ON DELETE RESTRICT,
+    course_id UUID REFERENCES courses(course_id) ON DELETE RESTRICT,
     appointment_date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     duration DECIMAL(4,2), -- Duration in hours
-    status VARCHAR(50) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'confirmed', 'completed', 'cancelled')),
+    status VARCHAR(50) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'confirmed', 'completed', 'cancelled', 'missed', 'no_show')),
     notes TEXT,
     source VARCHAR(50) DEFAULT 'manual', -- 'manual', 'wconline', etc.
+    -- WCOnline specific fields
+    schedule_title VARCHAR(255), -- Schedule Title from WCOnline
+    is_walk_in BOOLEAN DEFAULT false, -- Walk-In/Drop-In
+    is_missed BOOLEAN DEFAULT false, -- Missed/No-Show
+    is_online BOOLEAN DEFAULT false, -- Online appointment
+    focus TEXT, -- Focus field from WCOnline
+    created_by VARCHAR(255), -- Created By from WCOnline
+    modified_by VARCHAR(255), -- Modified By from WCOnline
+    is_repeating BOOLEAN DEFAULT false, -- Repeating appointment
+    course_instructor VARCHAR(255), -- Course instructor from WCOnline
+    course_code VARCHAR(50), -- Course code (stored directly for reference)
+    course_name VARCHAR(255), -- Course name (stored directly for reference)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -98,7 +110,8 @@ CREATE TABLE IF NOT EXISTS tutor_availability (
     end_time TIME NOT NULL,
     is_available BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(tutor_id, day_of_week, start_time, end_time)
 );
 
 -- ============================================
@@ -112,6 +125,17 @@ CREATE TABLE IF NOT EXISTS available_slots (
     end_time TIME NOT NULL,
     is_booked BOOLEAN DEFAULT false,
     source VARCHAR(50) DEFAULT 'wconline', -- 'wconline', 'manual'
+    -- WCOnline specific fields (all checked fields from WCOnline)
+    schedule_title VARCHAR(255), -- Schedule Title from WCOnline
+    is_walk_in BOOLEAN DEFAULT false, -- Walk-In/Drop-In
+    is_online BOOLEAN DEFAULT false, -- Online appointment
+    focus TEXT, -- Focus field from WCOnline
+    created_by VARCHAR(255), -- Created By from WCOnline
+    modified_by VARCHAR(255), -- Modified By from WCOnline
+    is_repeating BOOLEAN DEFAULT false, -- Repeating slot
+    course_code VARCHAR(50), -- Course code (stored directly for reference)
+    course_name VARCHAR(255), -- Course name (stored directly for reference)
+    course_instructor VARCHAR(255), -- Course instructor from WCOnline
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(tutor_id, slot_date, start_time, end_time)

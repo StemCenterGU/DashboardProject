@@ -257,10 +257,90 @@ def find_or_create_tutor(supabase, tutor_name, tutor_email=None):
         
         return None
 
+def find_or_create_course(supabase, course_code=None, course_name=None):
+    """Find or create course in Supabase"""
+    if not course_code and not course_name:
+        return None
+    
+    if supabase.get('use_http'):
+        url = supabase['url']
+        key = supabase['key']
+        headers = {
+            'apikey': key,
+            'Authorization': f'Bearer {key}',
+            'Content-Type': 'application/json'
+        }
+        
+        # Try to find by course code
+        if course_code:
+            response = requests.get(
+                f"{url}/rest/v1/courses?course_code=eq.{course_code.upper()}&select=course_id",
+                headers=headers
+            )
+            if response.status_code == 200 and response.json():
+                return response.json()[0]['course_id']
+        
+        # Try to find by name
+        if course_name:
+            response = requests.get(
+                f"{url}/rest/v1/courses?course_name=ilike.{course_name}&select=course_id&limit=1",
+                headers=headers
+            )
+            if response.status_code == 200 and response.json():
+                return response.json()[0]['course_id']
+        
+        # Create new course
+        course_data = {'active': True}
+        if course_code:
+            course_data['course_code'] = course_code.upper()
+        if course_name:
+            course_data['course_name'] = course_name
+        elif course_code:
+            course_data['course_name'] = course_code
+        
+        response = requests.post(
+            f"{url}/rest/v1/courses",
+            headers=headers,
+            json=course_data
+        )
+        if response.status_code in [200, 201] and response.json():
+            return response.json()[0]['course_id']
+        
+        return None
+    else:
+        # Use supabase-py
+        # Try to find by course code
+        if course_code:
+            result = supabase.table('courses').select('course_id').eq('course_code', course_code.upper()).limit(1).execute()
+            if result.data and len(result.data) > 0:
+                return result.data[0]['course_id']
+        
+        # Try to find by name
+        if course_name:
+            result = supabase.table('courses').select('course_id').ilike('course_name', f'%{course_name}%').limit(1).execute()
+            if result.data and len(result.data) > 0:
+                return result.data[0]['course_id']
+        
+        # Create new course
+        course_data = {'active': True}
+        if course_code:
+            course_data['course_code'] = course_code.upper()
+        if course_name:
+            course_data['course_name'] = course_name
+        elif course_code:
+            course_data['course_name'] = course_code
+        
+        result = supabase.table('courses').insert(course_data).select('course_id').single().execute()
+        if result.data:
+            return result.data[0]['course_id']
+        
+        return None
+
 def sync_available_slot(supabase, slot, date_str):
-    """Sync an available slot to Supabase"""
+    """Sync an available slot to Supabase with all WCOnline fields"""
     tutor_name = slot.get('Staff or Resource', '')
-    tutor_id = find_or_create_tutor(supabase, tutor_name)
+    tutor_email = slot.get('Staff Email', '')
+    tutor_id = find_or_create_tutor(supabase, tutor_name, tutor_email)
     
     if not tutor_id:
         return False
@@ -271,13 +351,59 @@ def sync_available_slot(supabase, slot, date_str):
     if not start_time or not end_time or not re.match(r'^\d{2}:\d{2}$', start_time):
         return False
     
+    # Helper function to safely convert to boolean
+    def safe_bool(value):
+        if value is None or value == '':
+            return False
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.lower() in ['true', 'yes', '1', 'y']
+        return bool(value)
+    
     slot_data = {
         'tutor_id': tutor_id,
         'slot_date': date_str,
         'start_time': start_time,
         'end_time': end_time,
         'is_booked': False,
-        'source': 'wconline'
+        'source': 'wconline',
+        # WCOnline specific fields (extract all checked fields)
+        'schedule_title': (slot.get('Schedule Title') or 
+                         slot.get('schedule_title') or 
+                         ''),
+        'is_walk_in': safe_bool(slot.get('Walk-In/Drop-In') or 
+                               slot.get('Walk-In') or 
+                               slot.get('Walk In') or
+                               slot.get('walk_in') or
+                               False),
+        'is_online': safe_bool(slot.get('Online') or 
+                              slot.get('online') or
+                              False),
+        'focus': (slot.get('Focus') or 
+                 slot.get('focus') or 
+                 ''),
+        'created_by': (slot.get('Created By') or 
+                      slot.get('created_by') or 
+                      ''),
+        'modified_by': (slot.get('Modified By') or 
+                       slot.get('modified_by') or 
+                       ''),
+        'is_repeating': safe_bool(slot.get('Repeating') or 
+                                 slot.get('repeating') or
+                                 False),
+        'course_code': (slot.get('Course Code') or 
+                       slot.get('Course') or 
+                       slot.get('course_code') or 
+                       '').upper() if slot.get('Course Code') or slot.get('Course') or slot.get('course_code') else None,
+        'course_name': (slot.get('Course Name') or 
+                       slot.get('Course') or 
+                       slot.get('course_name') or 
+                       '') if slot.get('Course Name') or slot.get('Course') or slot.get('course_name') else None,
+        'course_instructor': (slot.get('Course Instructor') or 
+                             slot.get('Course instructor') or 
+                             slot.get('course_instructor') or 
+                             ''),
     }
     
     try:
@@ -306,10 +432,11 @@ def sync_available_slot(supabase, slot, date_str):
         return False
 
 def sync_appointment(supabase, appointment, date_str):
-    """Sync a booked appointment to Supabase"""
+    """Sync a booked appointment to Supabase with all WCOnline fields"""
     tutor_name = appointment.get('Staff or Resource', '')
     student_name = appointment.get('Student Name', '')
-    tutor_id = find_or_create_tutor(supabase, tutor_name)
+    tutor_email = appointment.get('Staff Email', '')
+    tutor_id = find_or_create_tutor(supabase, tutor_name, tutor_email)
     
     if not tutor_id:
         return False
@@ -320,18 +447,114 @@ def sync_appointment(supabase, appointment, date_str):
     if not start_time or not end_time or not re.match(r'^\d{2}:\d{2}$', start_time):
         return False
     
-    # Generate appointment ID
-    appointment_id = f"{tutor_id}-{date_str}-{start_time}".replace(':', '-').replace(' ', '-')
+    # Extract all WCOnline fields (try multiple possible field names for flexibility)
+    course_code = (appointment.get('Course Code') or 
+                   appointment.get('Course') or 
+                   appointment.get('course_code') or 
+                   '')
+    course_name = (appointment.get('Course Name') or 
+                   appointment.get('Course') or 
+                   appointment.get('course_name') or 
+                   '')
+    course_instructor = (appointment.get('Course Instructor') or 
+                         appointment.get('Course instructor') or 
+                         appointment.get('course_instructor') or 
+                         '')
     
+    # Find or create course
+    course_id = None
+    if course_code or course_name:
+        course_id = find_or_create_course(supabase, course_code, course_name)
+    
+    # Determine status based on Missed/No-Show (try multiple field names)
+    status = 'scheduled'
+    is_missed = False
+    missed_value = (appointment.get('Missed/No-Show') or 
+                   appointment.get('Missed/No Show') or 
+                   appointment.get('Missed') or 
+                   appointment.get('No-Show') or 
+                   appointment.get('No Show') or 
+                   '')
+    if missed_value and str(missed_value).lower() not in ['', 'false', '0', 'no']:
+        is_missed = True
+        if 'no-show' in str(missed_value).lower() or 'no show' in str(missed_value).lower():
+            status = 'no_show'
+        else:
+            status = 'missed'
+    
+    # Generate appointment ID (use WCOnline ID if available)
+    appointment_id = (appointment.get('Appointment ID') or 
+                     appointment.get('AppointmentID') or 
+                     appointment.get('ID') or 
+                     appointment.get('id') or
+                     f"{tutor_id}-{date_str}-{start_time}".replace(':', '-').replace(' ', '-'))
+    
+    # Calculate duration in hours
+    try:
+        start_dt = datetime.strptime(f"{date_str} {start_time}", "%Y-%m-%d %H:%M")
+        end_dt = datetime.strptime(f"{date_str} {end_time}", "%Y-%m-%d %H:%M")
+        duration = (end_dt - start_dt).total_seconds() / 3600.0
+    except:
+        duration = None
+    
+    # Helper function to safely convert to boolean
+    def safe_bool(value):
+        if value is None or value == '':
+            return False
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.lower() in ['true', 'yes', '1', 'y']
+        return bool(value)
+    
+    # Build appointment data with all WCOnline fields (using flexible field name matching)
     appointment_data = {
         'appointment_id': appointment_id,
         'tutor_id': tutor_id,
         'student_name': student_name,
+        'student_email': (appointment.get('Student Email') or 
+                         appointment.get('student_email') or 
+                         ''),
+        'course_id': course_id,
         'appointment_date': date_str,
         'start_time': start_time,
         'end_time': end_time,
-        'status': 'scheduled',
-        'source': 'wconline'
+        'duration': duration,
+        'status': status,
+        'notes': (appointment.get('Notes') or 
+                 appointment.get('notes') or 
+                 appointment.get('Focus') or 
+                 appointment.get('focus') or 
+                 ''),
+        'source': 'wconline',
+        # WCOnline specific fields
+        'schedule_title': (appointment.get('Schedule Title') or 
+                          appointment.get('schedule_title') or 
+                          ''),
+        'is_walk_in': safe_bool(appointment.get('Walk-In/Drop-In') or 
+                               appointment.get('Walk-In') or 
+                               appointment.get('Walk In') or
+                               appointment.get('walk_in') or
+                               False),
+        'is_missed': is_missed,
+        'is_online': safe_bool(appointment.get('Online') or 
+                              appointment.get('online') or
+                              False),
+        'focus': (appointment.get('Focus') or 
+                 appointment.get('focus') or 
+                 ''),
+        'created_by': (appointment.get('Created By') or 
+                      appointment.get('created_by') or 
+                      ''),
+        'modified_by': (appointment.get('Modified By') or 
+                       appointment.get('modified_by') or 
+                       ''),
+        'is_repeating': safe_bool(appointment.get('Repeating') or 
+                                 appointment.get('repeating') or
+                                 False),
+        'course_instructor': course_instructor,
+        'course_code': course_code.upper() if course_code else None,
+        'course_name': course_name if course_name else None,
     }
     
     try:
