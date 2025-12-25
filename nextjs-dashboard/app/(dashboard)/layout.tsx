@@ -1,53 +1,18 @@
 import { redirect } from "next/navigation"
-import { createServerClient } from "@/lib/supabase-server"
+import { getCurrentUser } from "@/lib/auth"
 import { Navbar } from "@/components/navbar"
-import { cookies } from "next/headers"
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // Check authentication - try Supabase Auth first (if configured)
-  let isAuthenticated = false
-  
-  try {
-    const supabase = await createServerClient()
-    if (supabase) {
-      const { data: { session }, error } = await supabase.auth.getSession()
-      
-      if (session && !error) {
-        isAuthenticated = true
-      }
-    }
-  } catch (error) {
-    // Supabase check failed, try custom session
-    // Silently continue to cookie check
-  }
+  // Check authentication using centralized auth utility
+  const user = await getCurrentUser()
 
-  // If no Supabase Auth session, check for custom session token
-  if (!isAuthenticated) {
-    try {
-      const cookieStore = await cookies()
-      const sessionToken = cookieStore.get("sessionToken")?.value
-      const userCookie = cookieStore.get("user")?.value
-
-      if (sessionToken || userCookie) {
-        isAuthenticated = true
-      }
-    } catch (error) {
-      // Cookie check failed - middleware will handle redirect
-    }
-  }
-
-  // Redirect if not authenticated - but let middleware handle it first
-  // This is a fallback
-  if (!isAuthenticated) {
-    try {
-      redirect("/login")
-    } catch {
-      // Redirect already in progress or handled by middleware
-    }
+  // Redirect if not authenticated - middleware also handles this, but this is a fallback
+  if (!user) {
+    redirect("/login")
   }
 
   return (

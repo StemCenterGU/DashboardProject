@@ -11,15 +11,11 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Skip Supabase auth if environment variables are not set
+  // Require Supabase configuration
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Still handle route protection with custom session tokens
+    // If Supabase is not configured, redirect dashboard routes to login
     if (request.nextUrl.pathname.startsWith('/dashboard')) {
-      const sessionToken = request.cookies.get('sessionToken')?.value
-      const userCookie = request.cookies.get('user')?.value
-      if (!sessionToken && !userCookie) {
-        return NextResponse.redirect(new URL('/login', request.url))
-      }
+      return NextResponse.redirect(new URL('/login', request.url))
     }
     return response
   }
@@ -43,16 +39,10 @@ export async function middleware(request: NextRequest) {
       data: { session },
     } = await supabase.auth.getSession()
 
-    // Protect dashboard routes
+    // Protect dashboard routes - require Supabase Auth session
     if (request.nextUrl.pathname.startsWith('/dashboard')) {
       if (!session) {
-        // Check for custom session token
-        const sessionToken = request.cookies.get('sessionToken')?.value
-        const userCookie = request.cookies.get('user')?.value
-
-        if (!sessionToken && !userCookie) {
-          return NextResponse.redirect(new URL('/login', request.url))
-        }
+        return NextResponse.redirect(new URL('/login', request.url))
       }
     }
 

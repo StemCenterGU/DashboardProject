@@ -1,52 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
-import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const sessionToken = cookieStore.get('sessionToken')?.value
-    const userCookie = cookieStore.get('user')?.value
-
-    // Try Supabase Auth first
     const supabase = await createServerClient()
-    if (supabase) {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session?.user) {
-          return NextResponse.json({
-            user_id: session.user.id,
-            email: session.user.email,
-            full_name: session.user.user_metadata?.full_name || '',
-            role: session.user.user_metadata?.role || 'tutor',
-            tutor_id: session.user.user_metadata?.tutor_id
-          })
-        }
-      } catch (error) {
-        // Supabase check failed, continue to cookie check
-      }
+    
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      )
     }
 
-    // Check custom session
-    if (userCookie) {
-      try {
-        const user = JSON.parse(userCookie)
-        return NextResponse.json({
-          user_id: user.user_id || user.id,
-          email: user.email,
-          full_name: user.full_name || user.user_metadata?.full_name || '',
-          role: user.role || user.user_metadata?.role || 'tutor',
-          tutor_id: user.tutor_id || user.user_metadata?.tutor_id
-        })
-      } catch (error) {
-        // Invalid cookie
-      }
+    // Get user from Supabase Auth session
+    const { data: { session }, error } = await supabase.auth.getSession()
+    
+    if (error || !session?.user) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      )
     }
 
-    return NextResponse.json(
-      { error: 'Not authenticated' },
-      { status: 401 }
-    )
+    // Get role from users table if available, otherwise use metadata
+    let role = session.user.user_metadata?.role || 'tutor'
+    
+    try {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single()
+      
+      if (userData?.role) {
+        role = userData.role
+      }
+    } catch (error) {
+      // Users table lookup failed, use metadata role
+    }
+
+    return NextResponse.json({
+      user_id: session.user.id,
+      email: session.user.email,
+      full_name: session.user.user_metadata?.full_name || '',
+      role: role,
+      tutor_id: session.user.user_metadata?.tutor_id
+    })
   } catch (error) {
     console.error('Error getting user info:', error)
     return NextResponse.json(

@@ -40,69 +40,39 @@ export default function RegisterPage() {
     }
 
     try {
-      // Try Supabase Auth first (optional)
-      try {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: formData.fullName,
-            },
+      // Use Supabase Auth for registration
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+            role: 'tutor', // Default role
           },
-        })
-
-        if (!authError && authData.user) {
-          // Supabase Auth registration successful
-          router.push("/login?registered=true")
-          return
-        }
-      } catch (authErr) {
-        // Supabase Auth failed, try custom users table via API
-        console.log('Supabase Auth registration failed, trying custom users table')
-      }
-
-      // Try custom users table via API
-      console.log('🚀 Calling registration API...', { email: formData.email })
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+          emailRedirectTo: `${window.location.origin}/dashboard`,
         },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          fullName: formData.fullName,
-        }),
       })
 
-      console.log('📥 Response status:', response.status, response.statusText)
-      
-      let result
-      try {
-        result = await response.json()
-        console.log('📥 Response data:', result)
-      } catch (parseError) {
-        const text = await response.text()
-        console.error('❌ Failed to parse JSON. Raw response:', text)
-        setError("Server returned invalid response. Please try again.")
+      if (authError) {
+        let errorMessage = "Registration failed. Please try again."
+        if (authError.message.includes("already registered")) {
+          errorMessage = "User with this email already exists"
+        } else if (authError.message) {
+          errorMessage = authError.message
+        }
+        setError(errorMessage)
         setLoading(false)
         return
       }
 
-      if (!response.ok) {
-        // Show detailed error message
-        const errorMsg = result.error || result.message || result.details || "Registration failed. Please try again."
-        console.error('❌ Registration API error:', result)
-        setError(errorMsg)
+      if (!authData.user) {
+        setError("Failed to create account. Please try again.")
         setLoading(false)
         return
       }
-
-      // Log success for debugging
-      console.log('✅ Registration successful!', result)
 
       // Registration successful
+      // Note: User may need to verify email depending on Supabase settings
       router.push("/login?registered=true")
     } catch (err) {
       setError("An error occurred. Please try again.")

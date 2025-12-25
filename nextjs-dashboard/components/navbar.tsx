@@ -21,52 +21,72 @@ export function Navbar() {
   const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
-    // Get user from localStorage or Supabase session
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user")
-      if (storedUser) {
-        try {
-          setUser(JSON.parse(storedUser))
-        } catch (e) {
-          // Ignore parse errors
-        }
-      }
-
-      // Also check Supabase session
-      supabase.auth.getSession().then(({ data: { session } }) => {
+    // Get user from Supabase Auth session
+    const fetchUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
         if (session?.user) {
           setUser({
             email: session.user.email,
             full_name: session.user.user_metadata?.full_name || session.user.email,
+            role: session.user.user_metadata?.role || 'tutor',
           })
+        } else {
+          // Try fetching from API as fallback
+          const response = await fetch("/api/user-info")
+          if (response.ok) {
+            const userData = await response.json()
+            setUser(userData)
+          }
         }
-      })
+      } catch (error) {
+        console.error("Error fetching user info:", error)
+      }
+    }
+
+    fetchUser()
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          email: session.user.email,
+          full_name: session.user.user_metadata?.full_name || session.user.email,
+          role: session.user.user_metadata?.role || 'tutor',
+        })
+      } else {
+        setUser(null)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
     }
   }, [])
 
   const handleLogout = async () => {
     try {
-      // Try Supabase Auth logout first
-      await supabase.auth.signOut()
+      // Sign out from Supabase Auth
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error("Logout error:", error)
+      }
+
+      // Clear localStorage
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("user")
+      }
+
+      // Redirect to login
+      router.push("/login")
+      router.refresh()
     } catch (err) {
-      // Ignore Supabase errors
+      console.error("Logout error:", err)
+      // Still redirect even if logout fails
+      router.push("/login")
+      router.refresh()
     }
-
-    // Clear custom session
-    try {
-      await fetch("/api/auth/logout", { method: "POST" })
-    } catch (err) {
-      // Ignore errors
-    }
-
-    // Clear localStorage
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("user")
-      localStorage.removeItem("sessionToken")
-    }
-
-    router.push("/login")
-    router.refresh()
   }
 
   return (

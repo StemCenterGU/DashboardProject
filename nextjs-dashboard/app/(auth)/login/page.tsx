@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
@@ -9,14 +9,25 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2 } from "lucide-react"
+import { Loader2, CheckCircle2 } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
+
+  useEffect(() => {
+    // Check if redirected from registration
+    if (searchParams.get("registered") === "true") {
+      setSuccess(true)
+      // Clear the query parameter
+      router.replace("/login", { scroll: false })
+    }
+  }, [searchParams, router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,44 +35,31 @@ export default function LoginPage() {
     setError("")
 
     try {
-      // First try Supabase Auth
+      // Use Supabase Auth for login
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.toLowerCase().trim(),
         password,
       })
 
-      if (!authError && authData.session) {
-        // Successful Supabase Auth login
-        router.push("/dashboard")
-        router.refresh()
-        return
-      }
-
-      // If Supabase Auth fails, try custom users table via API
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        setError(result.error || "Invalid email or password")
+      if (authError) {
+        let errorMessage = "Invalid email or password"
+        if (authError.message.includes("Email not confirmed")) {
+          errorMessage = "Please verify your email before logging in"
+        } else if (authError.message) {
+          errorMessage = authError.message
+        }
+        setError(errorMessage)
         setLoading(false)
         return
       }
 
-      // Store user in localStorage for now
-      if (typeof window !== "undefined" && result.user) {
-        localStorage.setItem("user", JSON.stringify(result.user))
-        if (result.sessionToken) {
-          localStorage.setItem("sessionToken", result.sessionToken)
-        }
+      if (!authData.session) {
+        setError("Failed to create session. Please try again.")
+        setLoading(false)
+        return
       }
 
+      // Successful login - Supabase handles session automatically
       router.push("/dashboard")
       router.refresh()
     } catch (err) {
@@ -85,6 +83,14 @@ export default function LoginPage() {
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
+            {success && (
+              <Alert className="bg-green-50 border-green-200">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  Registration successful! Please log in with your credentials.
+                </AlertDescription>
+              </Alert>
+            )}
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>

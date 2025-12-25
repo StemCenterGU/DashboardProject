@@ -4,9 +4,6 @@ import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
-    const cookieStore = await cookies()
-    const userCookie = cookieStore.get('user')?.value
     const supabase = await createServerClient()
 
     if (!supabase) {
@@ -16,18 +13,27 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get current user
-    let currentUser: any = null
-    if (userCookie) {
-      try {
-        currentUser = JSON.parse(userCookie)
-      } catch (error) {
-        // Invalid cookie
-      }
+    // Get current user from Supabase Auth
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
+    // Get user role from users table
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .single()
+
+    const currentUserRole = userData?.role || session.user.user_metadata?.role || 'tutor'
+
     // Check if user has permission (admin/manager)
-    if (!currentUser || !['admin', 'manager'].includes(currentUser.role)) {
+    if (!['admin', 'manager'].includes(currentUserRole)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -49,7 +55,7 @@ export async function GET(request: NextRequest) {
       ...user,
       created_at: user.created_at ? new Date(user.created_at).toISOString() : '',
       last_login: user.last_login ? new Date(user.last_login).toISOString() : '',
-      read_only: currentUser.role === 'lead_tutor' // Lead tutors see read-only
+      read_only: currentUserRole === 'lead_tutor' // Lead tutors see read-only
     }))
 
     return NextResponse.json(safeUsers)
