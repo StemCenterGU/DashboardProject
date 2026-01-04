@@ -111,7 +111,7 @@ npm run set-admin your-email@example.com
 
 Or directly:
 ```bash
-node scripts/set-admin-role.js your-email@example.com
+node scripts/utils/set-admin-role.js your-email@example.com
 ```
 
 **Requirements:**

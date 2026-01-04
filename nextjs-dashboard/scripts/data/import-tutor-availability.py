@@ -230,7 +230,7 @@ def main():
     print("="*70)
     
     # Read schedule from file or use provided text
-    schedule_file = Path(__file__).parent.parent / 'tutor-availability-schedule.txt'
+    schedule_file = Path(__file__).parent.parent.parent / 'data' / 'tutor-availability-schedule.txt'
     
     if schedule_file.exists():
         print(f"\n📖 Reading schedule from: {schedule_file}")

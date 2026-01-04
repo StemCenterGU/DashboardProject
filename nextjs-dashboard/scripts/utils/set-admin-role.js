@@ -2,7 +2,7 @@
  * Script to set a user's role to admin
  * 
  * Usage:
- *   node scripts/set-admin-role.js your-email@example.com
+ *   node scripts/utils/set-admin-role.js your-email@example.com
  */
 
 require('dotenv').config({ path: '.env.local' })
@@ -13,7 +13,7 @@ const fetch = globalThis.fetch || require('node-fetch')
 async function setAdminRole(email) {
   if (!email) {
     console.error('❌ Please provide an email address')
-    console.log('Usage: node scripts/set-admin-role.js your-email@example.com')
+    console.log('Usage: node scripts/utils/set-admin-role.js your-email@example.com')
     process.exit(1)
   }
 

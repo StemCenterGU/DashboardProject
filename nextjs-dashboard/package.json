@@ -11,7 +11,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "set-admin": "node scripts/set-admin-role.js"
+    "set-admin": "node scripts/utils/set-admin-role.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

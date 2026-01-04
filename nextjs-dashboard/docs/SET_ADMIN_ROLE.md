@@ -9,7 +9,7 @@ npm run dev
 
 ### Step 2: Run the script (in another terminal)
 ```bash
-node scripts/set-admin-role.js your-email@example.com
+node scripts/utils/set-admin-role.js your-email@example.com
 ```
 
 Replace `your-email@example.com` with the email you used to register.

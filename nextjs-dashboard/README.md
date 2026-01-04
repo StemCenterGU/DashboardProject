@@ -125,7 +125,7 @@ pip install requests python-dotenv pandas
 
 3. **Set Up Database Schema**:
    - Go to SQL Editor in Supabase Dashboard
-   - Open `supabase-schema.sql` from the project
+   - Open `database/supabase-schema.sql` from the project
    - Copy and paste the entire SQL script
    - Click "Run" to execute
    - Verify tables are created (should see: users, tutors, appointments, courses, etc.)
@@ -242,7 +242,7 @@ pip install requests python-dotenv pandas
 
 # 3. Set up Supabase
 # - Create project at https://app.supabase.com
-# - Run supabase-schema.sql in SQL Editor
+# - Run database/supabase-schema.sql in SQL Editor
 # - Enable Email/Password auth
 
 # 4. Create .env.local with Supabase credentials
@@ -286,7 +286,7 @@ npm run dev
 1. **Via Supabase Dashboard** (Recommended for beginners):
    - Go to Supabase Dashboard → SQL Editor
    - Click "New Query"
-   - Open `supabase-schema.sql` from the project
+   - Open `database/supabase-schema.sql` from the project
    - Copy entire contents
    - Paste into SQL Editor
    - Click "Run" (or press Ctrl+Enter)
@@ -374,9 +374,29 @@ nextjs-dashboard/
 │   ├── analytics.ts              # Analytics engine
 │   ├── wconline.ts               # WCOnline integration
 │   └── utils.ts                  # Utility functions
-├── scripts/                      # Python scripts
-│   ├── sync-wconline.py          # WCOnline sync script
-│   └── debug-online-field.py     # Debugging tools
+├── scripts/                      # Utility scripts
+│   ├── sync/                     # Synchronization scripts
+│   │   └── sync-wconline.py      # WCOnline sync script
+│   ├── data/                     # Data management scripts
+│   │   ├── import-courses-from-appointments.py
+│   │   ├── import-tutor-availability.py
+│   │   ├── extract-tutor-availability.py
+│   │   └── populate-available-slots.py
+│   └── utils/                    # Utility scripts
+│       └── set-admin-role.js
+├── database/                     # Database files
+│   ├── supabase-schema.sql       # Main database schema
+│   ├── fix-rls-policies.sql      # RLS policy fixes
+│   └── query-tutor-availability.sql
+├── docs/                         # Documentation
+│   ├── QUICK_START.md
+│   ├── SUPABASE_AUTH_SETUP.md
+│   └── ...
+├── data/                         # Data files
+│   ├── wconline/                 # WCOnline data exports
+│   └── tutor-availability-schedule.txt
+└── notebooks/                    # Jupyter notebooks
+    └── api.ipynb                 # WCOnline API testing
 ├── types/                        # TypeScript definitions
 └── public/                       # Static assets
 ```
@@ -404,10 +424,10 @@ nextjs-dashboard/
 
 ```bash
 # Sync a specific date
-python scripts/sync-wconline.py 2025-01-15
+python scripts/sync/sync-wconline.py 2025-01-15
 
 # Sync a date range
-python scripts/sync-wconline.py 2025-01-01 2025-01-14
+python scripts/sync/sync-wconline.py 2025-01-01 2025-01-14
 ```
 
 ### What Gets Synced
@@ -436,7 +456,7 @@ Extract unique courses from appointments:
 
 ```bash
 # Import all unique course names from appointments table
-python scripts/import-courses-from-appointments.py
+python scripts/data/import-courses-from-appointments.py
 ```
 
 ## 🎨 Schedule Grid Features
@@ -528,15 +548,15 @@ npm run lint         # Run ESLint
 
 ```bash
 # WCOnline Sync
-python scripts/sync-wconline.py <start_date> <end_date>
-python scripts/sync-wconline.py 2025-01-15              # Single date
-python scripts/sync-wconline.py 2025-01-01 2025-01-14   # Date range
+python scripts/sync/sync-wconline.py <start_date> <end_date>
+python scripts/sync/sync-wconline.py 2025-01-15              # Single date
+python scripts/sync/sync-wconline.py 2025-01-01 2025-01-14   # Date range
 
 # Data Management
-python scripts/populate-available-slots.py <start_date> <end_date>
-python scripts/import-courses-from-appointments.py
-python scripts/extract-tutor-availability.py
-python scripts/import-tutor-availability.py
+python scripts/data/populate-available-slots.py <start_date> <end_date>
+python scripts/data/import-courses-from-appointments.py
+python scripts/data/extract-tutor-availability.py
+python scripts/data/import-tutor-availability.py
 
 # Migration (if needed)
 python scripts/migrate-users-to-supabase-auth.py
@@ -673,11 +693,13 @@ npm install
 
 ## 📚 Additional Documentation
 
-- [Quick Start Guide](./QUICK_START.md) - Fast setup for fresh installations
-- [Supabase Auth Setup](./SUPABASE_AUTH_SETUP.md) - Detailed authentication configuration
-- [Login & Admin Guide](./LOGIN_AND_ADMIN_GUIDE.md) - Authentication troubleshooting
-- [WCOnline Integration](./WCONLINE_DATA_MAPPING.md) - WCOnline data mapping details
-- [Set Admin Role](./SET_ADMIN_ROLE.md) - Admin role management
+- [Project Structure](./PROJECT_STRUCTURE.md) - Detailed project organization
+- [Quick Start Guide](./docs/QUICK_START.md) - Fast setup for fresh installations
+- [Supabase Auth Setup](./docs/SUPABASE_AUTH_SETUP.md) - Detailed authentication configuration
+- [Login & Admin Guide](./docs/LOGIN_AND_ADMIN_GUIDE.md) - Authentication troubleshooting
+- [WCOnline Integration](./docs/WCONLINE_DATA_MAPPING.md) - WCOnline data mapping details
+- [Set Admin Role](./docs/SET_ADMIN_ROLE.md) - Admin role management
+- [Scripts Documentation](./scripts/README.md) - Script usage and organization
 
 ---
 
@@ -700,7 +722,7 @@ Use this checklist to ensure everything is set up correctly:
 ### Supabase Setup
 - [ ] Supabase account created
 - [ ] Supabase project created
-- [ ] Database schema executed (`supabase-schema.sql`)
+- [ ] Database schema executed (`database/supabase-schema.sql`)
 - [ ] Email/Password auth enabled
 - [ ] Supabase credentials obtained
 

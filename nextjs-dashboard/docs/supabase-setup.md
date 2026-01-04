@@ -6,7 +6,7 @@
 
 1. Open your Supabase project dashboard
 2. Go to **SQL Editor**
-3. Copy the entire contents of `supabase-schema.sql`
+3. Copy the entire contents of `database/supabase-schema.sql`
 4. Paste and click **Run**
 5. All tables will be created with proper relationships
 
@@ -61,7 +61,7 @@ Currently set to allow all operations. **You should restrict this in production:
 
 ## Next Steps
 
-1. ✅ Run `supabase-schema.sql` in Supabase SQL Editor
+1. ✅ Run `database/supabase-schema.sql` in Supabase SQL Editor
 2. ✅ Verify tables are created
 3. ✅ Test WCOnline sync: `POST /api/sync/wconline`
 4. ✅ Check data appears in Supabase
