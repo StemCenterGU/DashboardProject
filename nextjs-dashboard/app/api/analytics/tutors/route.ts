@@ -11,33 +11,20 @@ export async function GET() {
       )
     }
 
-    // Get tutors
+    // Get tutors - simplified tutors table has tutor_id and tutor_name
     const { data: tutors, error: tutorsError } = await supabase
       .from('tutors')
-      .select('tutor_id, user_id')
-      .eq('is_available', true)
+      .select('tutor_id, tutor_name')
+      .order('tutor_name')
 
     if (tutorsError) {
       throw tutorsError
     }
 
-    // Get user names
-    const userIds = tutors?.map(t => t.user_id) || []
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('user_id, full_name')
-      .in('user_id', userIds)
-
-    if (usersError) {
-      throw usersError
-    }
-
-    const userMap = new Map(users?.map(u => [u.user_id, u.full_name]) || [])
-
-    // Combine tutor and user data
+    // Map to expected format
     const tutorsList = tutors?.map(tutor => ({
       tutor_id: tutor.tutor_id,
-      tutor_name: userMap.get(tutor.user_id) || `Tutor ${tutor.tutor_id}`
+      tutor_name: tutor.tutor_name || `Tutor ${tutor.tutor_id}`
     })) || []
 
     return NextResponse.json(tutorsList)

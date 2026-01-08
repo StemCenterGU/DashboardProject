@@ -30,16 +30,43 @@ export async function GET(request: NextRequest) {
     const dayType = searchParams.get('day_type')
     const shiftStartHour = searchParams.get('shift_start_hour')
     const shiftEndHour = searchParams.get('shift_end_hour')
+    const isOnline = searchParams.get('is_online')
+    const isWalkIn = searchParams.get('is_walk_in')
+    const startTime = searchParams.get('start_time')
+    const endTime = searchParams.get('end_time')
+    const minDuration = searchParams.get('min_duration')
+    const maxDuration = searchParams.get('max_duration')
+    const dayOfWeek = searchParams.get('day_of_week')
+    const courseInstructor = searchParams.get('course_instructor')
+    const isRepeating = searchParams.get('is_repeating')
 
     if (tutorIds) filters.tutor_ids = tutorIds.split(',')
     if (startDate) filters.start_date = startDate
     if (endDate) filters.end_date = endDate
-    if (status) filters.status = status
+    if (status) {
+      const statusArray = status.split(',')
+      filters.status = statusArray.length === 1 ? statusArray[0] : statusArray
+    }
     if (courseIds) filters.course_ids = courseIds.split(',')
     if (duration) filters.duration = parseFloat(duration)
     if (dayType) filters.day_type = dayType
     if (shiftStartHour) filters.shift_start_hour = parseInt(shiftStartHour)
     if (shiftEndHour) filters.shift_end_hour = parseInt(shiftEndHour)
+    if (isOnline !== null && isOnline !== '') filters.is_online = isOnline === 'true'
+    if (isWalkIn !== null && isWalkIn !== '') filters.is_walk_in = isWalkIn === 'true'
+    if (startTime) filters.start_time = startTime
+    if (endTime) filters.end_time = endTime
+    if (minDuration) filters.min_duration = parseFloat(minDuration)
+    if (maxDuration) filters.max_duration = parseFloat(maxDuration)
+    if (dayOfWeek) {
+      const daysArray = dayOfWeek.split(',').map(d => parseInt(d))
+      filters.day_of_week = daysArray.length === 1 ? daysArray[0] : daysArray
+    }
+    if (courseInstructor) {
+      const instructorArray = courseInstructor.split(',')
+      filters.course_instructor = instructorArray.length === 1 ? instructorArray[0] : instructorArray
+    }
+    if (isRepeating !== null && isRepeating !== '') filters.is_repeating = isRepeating === 'true'
 
     // Handle grid mode - return multiple datasets
     if (mode === 'grid') {
@@ -88,7 +115,13 @@ export async function GET(request: NextRequest) {
       monthly_appointments: 'Monthly Appointments',
       tutor_availability_hours: 'Tutor Available Hours',
       shift_coverage: 'Shift Coverage',
-      appointment_trends: 'Appointment Trends'
+      appointment_trends: 'Appointment Trends',
+      online_vs_inperson: 'Online vs In-Person Appointments',
+      walk_in_analytics: 'Walk-In vs Scheduled Appointments',
+      missed_noshow_analytics: 'Missed/No-Show Analytics',
+      day_of_week_analytics: 'Appointments by Day of Week',
+      monthly_trends: 'Monthly Appointment Trends',
+      instructor_analytics: 'Appointments per Instructor'
     }
 
     return NextResponse.json({
@@ -119,7 +152,33 @@ export async function POST(request: NextRequest) {
     const analytics = new SchedulingAnalytics(supabase)
 
     const body = await request.json()
-    const { dataset = 'appointments_per_tutor', chart_type = 'bar', mode = 'single', ...filters } = body
+    const { dataset = 'appointments_per_tutor', chart_type = 'bar', mode = 'single', ...rawFilters } = body
+    
+    // Process filters - convert string booleans to actual booleans
+    const filters: any = { ...rawFilters }
+    if (filters.is_online !== undefined && typeof filters.is_online === 'string') {
+      filters.is_online = filters.is_online === 'true'
+    }
+    if (filters.is_walk_in !== undefined && typeof filters.is_walk_in === 'string') {
+      filters.is_walk_in = filters.is_walk_in === 'true'
+    }
+    if (filters.is_repeating !== undefined && typeof filters.is_repeating === 'string') {
+      filters.is_repeating = filters.is_repeating === 'true'
+    }
+    if (filters.day_of_week !== undefined && typeof filters.day_of_week === 'string') {
+      const daysArray = filters.day_of_week.split(',').map((d: string) => parseInt(d))
+      filters.day_of_week = daysArray.length === 1 ? daysArray[0] : daysArray
+    }
+    if (filters.course_instructor !== undefined && typeof filters.course_instructor === 'string') {
+      const instructorArray = filters.course_instructor.split(',')
+      filters.course_instructor = instructorArray.length === 1 ? instructorArray[0] : instructorArray
+    }
+    if (filters.min_duration !== undefined && typeof filters.min_duration === 'string') {
+      filters.min_duration = parseFloat(filters.min_duration)
+    }
+    if (filters.max_duration !== undefined && typeof filters.max_duration === 'string') {
+      filters.max_duration = parseFloat(filters.max_duration)
+    }
 
     // Handle grid mode
     if (mode === 'grid') {

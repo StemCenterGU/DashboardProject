@@ -16,6 +16,7 @@ export function PredictiveAnalytics() {
 
   useEffect(() => {
     fetchPrediction()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchPrediction = async () => {
