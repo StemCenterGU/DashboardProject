@@ -36,18 +36,18 @@ export async function middleware(request: NextRequest) {
     })
 
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    // Protect dashboard routes - require Supabase Auth session
+    // Protect dashboard routes - require Supabase Auth user
     if (request.nextUrl.pathname.startsWith('/dashboard')) {
-      if (!session) {
+      if (!user) {
         return NextResponse.redirect(new URL('/login', request.url))
       }
     }
 
     // Redirect authenticated users away from login/register
-    if ((request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register') && session) {
+    if ((request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register') && user) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   } catch (error) {

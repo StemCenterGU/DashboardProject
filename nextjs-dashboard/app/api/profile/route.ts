@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get user from Supabase Auth session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Get user from Supabase Auth
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    if (sessionError || !session?.user) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -26,14 +26,14 @@ export async function GET(request: NextRequest) {
     const { data: userData } = await supabase
       .from('users')
       .select('user_id, email, full_name, role, active')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single()
 
     return NextResponse.json({
-      user_id: session.user.id,
-      email: session.user.email,
-      full_name: userData?.full_name || session.user.user_metadata?.full_name || '',
-      role: userData?.role || session.user.user_metadata?.role || 'tutor',
+      user_id: user.id,
+      email: user.email,
+      full_name: userData?.full_name || user.user_metadata?.full_name || '',
+      role: userData?.role || user.user_metadata?.role || 'tutor',
       active: userData?.active ?? true,
     })
   } catch (error) {
@@ -56,10 +56,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user from Supabase Auth session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Get user from Supabase Auth
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    if (sessionError || !session?.user) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         await supabase
           .from('users')
           .update({ full_name: newName })
-          .eq('user_id', session.user.id)
+          .eq('user_id', user.id)
 
         // Update in Supabase Auth metadata
         await supabase.auth.updateUser({

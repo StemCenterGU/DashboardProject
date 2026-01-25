@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get user from Supabase Auth session
-    const { data: { session }, error } = await supabase.auth.getSession()
+    // Get user from Supabase Auth
+    const { data: { user }, error } = await supabase.auth.getUser()
     
-    if (error || !session?.user) {
+    if (error || !user) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
@@ -23,13 +23,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Get role from users table if available, otherwise use metadata
-    let role = session.user.user_metadata?.role || 'tutor'
+    let role = user.user_metadata?.role || 'tutor'
     
     try {
       const { data: userData } = await supabase
         .from('users')
         .select('role')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .single()
       
       if (userData?.role) {
@@ -40,11 +40,11 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      user_id: session.user.id,
-      email: session.user.email,
-      full_name: session.user.user_metadata?.full_name || '',
+      user_id: user.id,
+      email: user.email,
+      full_name: user.user_metadata?.full_name || '',
       role: role,
-      tutor_id: session.user.user_metadata?.tutor_id
+      tutor_id: user.user_metadata?.tutor_id
     })
   } catch (error) {
     console.error('Error getting user info:', error)

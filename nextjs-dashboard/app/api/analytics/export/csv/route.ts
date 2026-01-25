@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase-server'
 import { SchedulingAnalytics } from '@/lib/analytics'
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createServerClient()
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured. Please set up Supabase environment variables.' },
+        { status: 503 }
+      )
+    }
+    
     const searchParams = request.nextUrl.searchParams
     
     // Parse all filter parameters
@@ -16,18 +25,18 @@ export async function GET(request: NextRequest) {
     const customStartDate = searchParams.get('custom_start_date')
     const customEndDate = searchParams.get('custom_end_date')
     if (customStartDate && customEndDate) {
-      filters.startDate = customStartDate
-      filters.endDate = customEndDate
+      filters.start_date = customStartDate
+      filters.end_date = customEndDate
     }
     
     const tutorIds = searchParams.get('tutor_ids')
     if (tutorIds) {
-      filters.tutorIds = tutorIds.split(',')
+      filters.tutor_ids = tutorIds.split(',')
     }
     
     const courseIds = searchParams.get('course_ids')
     if (courseIds) {
-      filters.courseIds = courseIds.split(',')
+      filters.course_ids = courseIds.split(',')
     }
     
     const status = searchParams.get('status')
@@ -37,51 +46,51 @@ export async function GET(request: NextRequest) {
     
     const isOnline = searchParams.get('is_online')
     if (isOnline !== null) {
-      filters.isOnline = isOnline === 'true'
+      filters.is_online = isOnline === 'true'
     }
     
     const isWalkIn = searchParams.get('is_walk_in')
     if (isWalkIn !== null) {
-      filters.isWalkIn = isWalkIn === 'true'
+      filters.is_walk_in = isWalkIn === 'true'
     }
     
     const startTime = searchParams.get('start_time')
     if (startTime) {
-      filters.startTime = startTime
+      filters.start_time = startTime
     }
     
     const endTime = searchParams.get('end_time')
     if (endTime) {
-      filters.endTime = endTime
+      filters.end_time = endTime
     }
     
     const minDuration = searchParams.get('min_duration')
     if (minDuration) {
-      filters.minDuration = parseFloat(minDuration)
+      filters.min_duration = parseFloat(minDuration)
     }
     
     const maxDuration = searchParams.get('max_duration')
     if (maxDuration) {
-      filters.maxDuration = parseFloat(maxDuration)
+      filters.max_duration = parseFloat(maxDuration)
     }
     
     const dayOfWeek = searchParams.get('day_of_week')
     if (dayOfWeek) {
-      filters.dayOfWeek = dayOfWeek.split(',').map(Number)
+      filters.day_of_week = dayOfWeek.split(',').map(Number)
     }
     
     const courseInstructor = searchParams.get('course_instructor')
     if (courseInstructor) {
-      filters.courseInstructor = courseInstructor.split(',')
+      filters.course_instructor = courseInstructor.split(',')
     }
     
     const isRepeating = searchParams.get('is_repeating')
     if (isRepeating !== null) {
-      filters.isRepeating = isRepeating === 'true'
+      filters.is_repeating = isRepeating === 'true'
     }
     
     // Get appointments with filters
-    const analytics = new SchedulingAnalytics()
+    const analytics = new SchedulingAnalytics(supabase)
     const appointments = await analytics.getAppointments(filters)
     
     // Convert to CSV format

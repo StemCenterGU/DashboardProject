@@ -84,6 +84,11 @@ export default function ChartsPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [todayStats, setTodayStats] = useState<SummaryStats | null>(null)
   const chartContainerRef = useRef<HTMLDivElement>(null)
+  
+  // Phase 3 state
+  const [phase3Data, setPhase3Data] = useState<any>(null)
+  const [comparisonData, setComparisonData] = useState<any>(null)
+  const [heatmapData, setHeatmapData] = useState<any>(null)
 
   // Filter states
   const [dateRange, setDateRange] = useState("all")
@@ -246,6 +251,137 @@ export default function ChartsPage() {
       const params = buildFilterParams()
       const queryString = new URLSearchParams(params).toString()
 
+      // Phase 3: Enhanced ML predictions
+      const phase3MLCharts = ['extended_forecast', 'course_demand', 'capacity_planning', 'tutor_workload', 'peak_hours_enhanced']
+      if (phase3MLCharts.includes(selectedChart)) {
+        // Build clean params without dataset/chart_type for Phase 3 APIs
+        const dateFilters = getDateRange()
+        const cleanParams = new URLSearchParams()
+        if (dateFilters.start_date) cleanParams.set('start_date', dateFilters.start_date)
+        if (dateFilters.end_date) cleanParams.set('end_date', dateFilters.end_date)
+        cleanParams.set('type', selectedChart)
+        if (selectedChart === 'extended_forecast' || selectedChart === 'capacity_planning') {
+          cleanParams.set('days', selectedChart === 'extended_forecast' ? '30' : '7')
+        }
+        
+        const response = await fetch(`/api/analytics/predict?${cleanParams.toString()}`)
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error || `Failed to fetch ${selectedChart} data: ${response.status}`)
+        }
+        const data = await response.json()
+        console.log('Phase 3 ML Data:', data)
+        
+        // Validate data structure
+        if (!data || (data.type && data.type !== selectedChart)) {
+          throw new Error(`Invalid data structure received for ${selectedChart}`)
+        }
+        
+        // Log data structure for debugging
+        console.log(`Phase 3 ${selectedChart} data structure:`, {
+          hasForecast: !!data.forecast,
+          hasPredictions: !!data.predictions,
+          hasRecommendations: !!data.recommendations,
+          hasPeakHours: !!data.peak_hours,
+          forecastLength: data.forecast?.daily_predictions?.length || 0,
+          predictionsLength: data.predictions?.length || 0,
+          recommendationsLength: data.recommendations?.length || 0,
+          peakHoursLength: data.peak_hours?.length || 0
+        })
+        
+        setPhase3Data(data)
+        setChartData(null)
+        setComparisonData(null)
+        setHeatmapData(null)
+        return
+      }
+
+      // Phase 3: Comparative analytics
+      const comparisonCharts = ['time_period_comparison', 'tutor_comparison', 'course_comparison']
+      if (comparisonCharts.includes(selectedChart)) {
+        const compareParams = new URLSearchParams()
+        const dateFilters = getDateRange()
+        
+        if (selectedChart === 'time_period_comparison') {
+          // For time period comparison, use default (last 7 days vs previous 7 days)
+          const endDate = new Date().toISOString().split('T')[0]
+          const period2Start = new Date()
+          period2Start.setDate(period2Start.getDate() - 7)
+          const period1End = new Date(period2Start)
+          period1End.setDate(period1End.getDate() - 1)
+          const period1Start = new Date(period1End)
+          period1Start.setDate(period1Start.getDate() - 7)
+
+          compareParams.set('type', 'time_period')
+          compareParams.set('period1_start', period1Start.toISOString().split('T')[0])
+          compareParams.set('period1_end', period1End.toISOString().split('T')[0])
+          compareParams.set('period2_start', period2Start.toISOString().split('T')[0])
+          compareParams.set('period2_end', endDate)
+        } else if (selectedChart === 'tutor_comparison') {
+          // For tutor comparison, need at least 2 tutors
+          if (selectedTutors.length < 2) {
+            throw new Error('Please select at least 2 tutors for comparison')
+          }
+          compareParams.set('type', 'tutors')
+          compareParams.set('tutor_ids', selectedTutors.join(','))
+          if (dateFilters.start_date) compareParams.set('start_date', dateFilters.start_date)
+          if (dateFilters.end_date) compareParams.set('end_date', dateFilters.end_date)
+        } else if (selectedChart === 'course_comparison') {
+          // For course comparison, need at least 2 courses
+          if (selectedCourses.length < 2) {
+            throw new Error('Please select at least 2 courses for comparison')
+          }
+          compareParams.set('type', 'courses')
+          compareParams.set('course_ids', selectedCourses.join(','))
+          if (dateFilters.start_date) compareParams.set('start_date', dateFilters.start_date)
+          if (dateFilters.end_date) compareParams.set('end_date', dateFilters.end_date)
+        }
+
+        const response = await fetch(`/api/analytics/compare?${compareParams.toString()}`)
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error || `Failed to fetch comparison data: ${response.status}`)
+        }
+        const data = await response.json()
+        console.log('Comparison Data:', data)
+        setComparisonData(data)
+        setChartData(null)
+        setPhase3Data(null)
+        setHeatmapData(null)
+        return
+      }
+
+      // Phase 3: Heatmaps
+      const heatmapCharts = ['day_hour_heatmap', 'tutor_day_heatmap', 'course_timeslot_heatmap']
+      if (heatmapCharts.includes(selectedChart)) {
+        const dateFilters = getDateRange()
+        const heatmapParams = new URLSearchParams({
+          type: selectedChart === 'day_hour_heatmap' ? 'day_hour' :
+                selectedChart === 'tutor_day_heatmap' ? 'tutor_day' : 'course_timeslot',
+          ...(dateFilters.start_date ? { start_date: dateFilters.start_date } : {}),
+          ...(dateFilters.end_date ? { end_date: dateFilters.end_date } : {})
+        })
+
+        const response = await fetch(`/api/analytics/heatmap?${heatmapParams.toString()}`)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch heatmap data`)
+        }
+        const data = await response.json()
+        console.log('Heatmap Data:', data)
+        
+        // Validate data structure
+        if (!data || !data.type || !data.data) {
+          throw new Error(`Invalid heatmap data structure received`)
+        }
+        
+        setHeatmapData(data)
+        setChartData(null)
+        setPhase3Data(null)
+        setComparisonData(null)
+        return
+      }
+
+      // Regular charts
       const response = await fetch(`/api/analytics/chart-data?${queryString}`)
       
       if (!response.ok) {
@@ -261,6 +397,9 @@ export default function ChartsPage() {
       
       setChartData(data.chart_data)
       setSummaryStats(data.summary)
+      setPhase3Data(null)
+      setComparisonData(null)
+      setHeatmapData(null)
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to load chart data'
       setError(errorMessage)
@@ -295,9 +434,8 @@ export default function ChartsPage() {
     try {
       const today = new Date().toISOString().split('T')[0]
       const params = new URLSearchParams({
-        date_range: 'custom',
-        custom_start_date: today,
-        custom_end_date: today
+        start_date: today,
+        end_date: today
       })
       
       const response = await fetch(`/api/analytics/summary?${params.toString()}`)
@@ -343,7 +481,16 @@ export default function ChartsPage() {
       
       const response = await fetch(`/api/analytics/export/csv?${queryString}`)
       if (!response.ok) {
-        throw new Error('Failed to export CSV')
+        // Try to get error message from response
+        let errorMessage = 'Failed to export CSV'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage
+        }
+        throw new Error(errorMessage)
       }
       
       const blob = await response.blob()
@@ -355,9 +502,9 @@ export default function ChartsPage() {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error exporting CSV:', err)
-      alert('Failed to export CSV. Please try again.')
+      alert(err.message || 'Failed to export CSV. Please try again.')
     } finally {
       setExporting(null)
     }
@@ -1198,6 +1345,23 @@ export default function ChartsPage() {
                 <option value="course_popularity">Course Popularity</option>
                 <option value="instructor_analytics">Instructor Analytics</option>
               </optgroup>
+              <optgroup label="Phase 3: Enhanced ML & Analytics">
+                <option value="extended_forecast">30-Day Forecast</option>
+                <option value="course_demand">Course Demand Prediction</option>
+                <option value="capacity_planning">Capacity Planning</option>
+                <option value="tutor_workload">Tutor Workload Prediction</option>
+                <option value="peak_hours_enhanced">Enhanced Peak Hours</option>
+              </optgroup>
+              <optgroup label="Phase 3: Comparative Analytics">
+                <option value="time_period_comparison">Time Period Comparison</option>
+                <option value="tutor_comparison">Tutor Comparison</option>
+                <option value="course_comparison">Course Comparison</option>
+              </optgroup>
+              <optgroup label="Phase 3: Heatmaps">
+                <option value="day_hour_heatmap">Day × Hour Heatmap</option>
+                <option value="tutor_day_heatmap">Tutor × Day Heatmap</option>
+                <option value="course_timeslot_heatmap">Course × Time Slot Heatmap</option>
+              </optgroup>
             </select>
             
             {chartData?.summary && (
@@ -1327,56 +1491,57 @@ export default function ChartsPage() {
                   </Button>
                 </div>
                 {selectedChart === 'course_popularity' && (
-                <div className="flex gap-2">
-                  <Button
-                    variant={courseViewType === 'bar' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setCourseViewType('bar')}
-                  >
-                    Bar
-                  </Button>
-                  <Button
-                    variant={courseViewType === 'pie' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setCourseViewType('pie')}
-                  >
-                    Pie
-                  </Button>
-                  <Button
-                    variant={courseViewType === 'table' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setCourseViewType('table')}
-                  >
-                    Table
-                  </Button>
-                </div>
-              )}
+                  <div className="flex gap-2">
+                    <Button
+                      variant={courseViewType === 'bar' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setCourseViewType('bar')}
+                    >
+                      Bar
+                    </Button>
+                    <Button
+                      variant={courseViewType === 'pie' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setCourseViewType('pie')}
+                    >
+                      Pie
+                    </Button>
+                    <Button
+                      variant={courseViewType === 'table' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setCourseViewType('table')}
+                    >
+                      Table
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div ref={chartContainerRef} className="w-full">
-            {loading ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : error ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <div className="text-center space-y-2">
-                  <AlertCircle className="h-8 w-8 mx-auto text-destructive" />
-                  <p className="text-sm text-destructive font-medium">{error}</p>
-                  <Button onClick={fetchChartData} variant="outline" size="sm" className="mt-2">
-                    Retry
-                  </Button>
-                </div>
-              </div>
-            ) : rechartsData.length === 0 ? (
-              <div className="h-[300px] flex items-center justify-center border-2 border-dashed rounded-lg">
-                <div className="text-center space-y-2">
-                  <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">No data available</p>
-                </div>
-              </div>
-            ) : selectedChart === 'course_popularity' && courseViewType === 'table' ? (
+              <div ref={chartContainerRef} className="w-full">
+                {loading ? (
+                  <div className="h-[300px] flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : error ? (
+                  <div className="h-[300px] flex items-center justify-center">
+                    <div className="text-center space-y-2">
+                      <AlertCircle className="h-8 w-8 mx-auto text-destructive" />
+                      <p className="text-sm text-destructive font-medium">{error}</p>
+                      <Button onClick={fetchChartData} variant="outline" size="sm" className="mt-2">
+                        Retry
+                      </Button>
+                    </div>
+                  </div>
+                ) : rechartsData.length === 0 ? (
+                  <div className="h-[300px] flex items-center justify-center border-2 border-dashed rounded-lg">
+                    <div className="text-center space-y-2">
+                      <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">No data available</p>
+                    </div>
+                  </div>
+                ) : selectedChart === 'course_popularity' && courseViewType === 'table' ? (
               <div className="space-y-4">
                 <div className="border rounded-lg overflow-hidden">
                   <table className="w-full">
@@ -1436,6 +1601,182 @@ export default function ChartsPage() {
                   </div>
                 )}
               </div>
+            ) : phase3Data && selectedChart === 'capacity_planning' ? (
+              phase3Data.recommendations ? (
+                <div className="space-y-4 p-4">
+                  {phase3Data.recommendations.length > 0 ? (
+                    phase3Data.recommendations.map((rec: any, idx: number) => (
+                      <div key={idx} className="p-4 border rounded-lg">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-semibold">{rec.date}</p>
+                            <p className="text-sm text-muted-foreground">{rec.reason}</p>
+                          </div>
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            rec.recommendation === 'increase' ? 'bg-red-100 text-red-800' :
+                            rec.recommendation === 'decrease' ? 'bg-green-100 text-green-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {rec.recommendation.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 mt-2 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Predicted</p>
+                            <p className="font-semibold">{rec.predicted_appointments}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Recommended Tutors</p>
+                            <p className="font-semibold">{rec.recommended_tutors}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Utilization</p>
+                            <p className="font-semibold">{rec.utilization_rate}%</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Need at least 2 days of historical data to generate capacity planning recommendations.</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[400px] text-center p-8">
+                  <p className="text-lg font-semibold mb-2">Insufficient Data for Capacity Planning</p>
+                  <p className="text-muted-foreground mb-4">
+                    We need more historical appointment data to generate capacity planning recommendations.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Try selecting a longer date range with appointment history or wait until more appointments are recorded.
+                  </p>
+                </div>
+              )
+            ) : comparisonData && selectedChart === 'time_period_comparison' ? (
+              <div className="space-y-4 p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <p className="font-semibold mb-2">Period 1</p>
+                    <p className="text-sm text-muted-foreground">{comparisonData.period1?.start} to {comparisonData.period1?.end}</p>
+                    <p className="text-2xl font-bold mt-2">{comparisonData.period1?.stats?.total_appointments || 0}</p>
+                    <p className="text-sm">Appointments</p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <p className="font-semibold mb-2">Period 2</p>
+                    <p className="text-sm text-muted-foreground">{comparisonData.period2?.start} to {comparisonData.period2?.end}</p>
+                    <p className="text-2xl font-bold mt-2">{comparisonData.period2?.stats?.total_appointments || 0}</p>
+                    <p className="text-sm">Appointments</p>
+                  </div>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="font-semibold mb-2">Change</p>
+                  <p className={`text-2xl font-bold ${
+                    comparisonData.comparison?.appointment_change_percentage > 0 ? 'text-green-600' : 
+                    comparisonData.comparison?.appointment_change_percentage < 0 ? 'text-red-600' : 'text-gray-600'
+                  }`}>
+                    {comparisonData.comparison?.appointment_change_percentage > 0 ? '+' : ''}
+                    {comparisonData.comparison?.appointment_change_percentage || 0}%
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {comparisonData.comparison?.appointment_difference > 0 ? '+' : ''}
+                    {comparisonData.comparison?.appointment_difference || 0} appointments
+                  </p>
+                </div>
+              </div>
+            ) : heatmapData ? (
+              heatmapData.data && heatmapData.data.length > 0 && heatmapData.max_value > 0 ? (
+                <div className="space-y-4 p-4">
+                  <div className="text-sm text-muted-foreground mb-4">
+                    Max value: {heatmapData.max_value || 0}
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr>
+                          <th className="border p-2 text-left">{heatmapData.type === 'day_hour' ? 'Day' : heatmapData.type === 'tutor_day' ? 'Tutor' : 'Course'}</th>
+                          {heatmapData.type === 'day_hour' ? (
+                            Array.from({ length: 24 }, (_, i) => (
+                              <th key={i} className="border p-2 text-center text-xs">{i}:00</th>
+                            ))
+                          ) : heatmapData.type === 'tutor_day' ? (
+                            ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+                              <th key={day} className="border p-2 text-center text-xs">{day}</th>
+                            ))
+                          ) : (
+                            ['8:00-10:00', '10:00-12:00', '12:00-14:00', '14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00'].map(slot => (
+                              <th key={slot} className="border p-2 text-center text-xs">{slot}</th>
+                            ))
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {heatmapData.data.map((row: any, idx: number) => {
+                        const rowKey = heatmapData.type === 'day_hour' ? 'day' : heatmapData.type === 'tutor_day' ? 'tutor' : 'course'
+                        return (
+                          <tr key={idx}>
+                            <td className="border p-2 font-medium">{row[rowKey]}</td>
+                            {heatmapData.type === 'day_hour' ? (
+                              Array.from({ length: 24 }, (_, hour) => {
+                                const value = row[hour] || 0
+                                const intensity = heatmapData.max_value > 0 ? (value / heatmapData.max_value) : 0
+                                return (
+                                  <td 
+                                    key={hour} 
+                                    className="border p-2 text-center text-xs"
+                                    style={{ backgroundColor: `rgba(136, 132, 216, ${intensity})` }}
+                                  >
+                                    {value}
+                                  </td>
+                                )
+                              })
+                            ) : heatmapData.type === 'tutor_day' ? (
+                              ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => {
+                                const value = row[day] || 0
+                                const intensity = heatmapData.max_value > 0 ? (value / heatmapData.max_value) : 0
+                                return (
+                                  <td 
+                                    key={day} 
+                                    className="border p-2 text-center text-xs"
+                                    style={{ backgroundColor: `rgba(136, 132, 216, ${intensity})` }}
+                                  >
+                                    {value}
+                                  </td>
+                                )
+                              })
+                            ) : (
+                              ['8:00-10:00', '10:00-12:00', '12:00-14:00', '14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00'].map(slot => {
+                                const value = row[slot] || 0
+                                const intensity = heatmapData.max_value > 0 ? (value / heatmapData.max_value) : 0
+                                return (
+                                  <td 
+                                    key={slot} 
+                                    className="border p-2 text-center text-xs"
+                                    style={{ backgroundColor: `rgba(136, 132, 216, ${intensity})` }}
+                                  >
+                                    {value}
+                                  </td>
+                                )
+                              })
+                            )}
+                          </tr>
+                        )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[400px] text-center p-8">
+                  <p className="text-lg font-semibold mb-2">No Heatmap Data Available</p>
+                  <p className="text-muted-foreground mb-4">
+                    We need appointment data to generate heatmap visualizations.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Try selecting a date range with appointments or adjust your filters to include more data.
+                  </p>
+                </div>
+              )
             ) : (
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1585,6 +1926,142 @@ export default function ChartsPage() {
                         ))}
                       </Bar>
                     </BarChart>
+                  ) : phase3Data && selectedChart === 'extended_forecast' ? (
+                    phase3Data.forecast ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="p-4 bg-muted rounded-lg">
+                            <p className="text-sm text-muted-foreground">Total Predicted</p>
+                            <p className="text-2xl font-bold">{phase3Data.forecast?.total_predicted || 0}</p>
+                          </div>
+                          <div className="p-4 bg-muted rounded-lg">
+                            <p className="text-sm text-muted-foreground">Average Daily</p>
+                            <p className="text-2xl font-bold">{phase3Data.forecast?.average_daily || 0}</p>
+                          </div>
+                        </div>
+                        {phase3Data.forecast.daily_predictions && phase3Data.forecast.daily_predictions.length > 0 ? (
+                          <LineChart data={phase3Data.forecast.daily_predictions} height={300}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" angle={-45} textAnchor="end" height={80} />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="predicted" stroke="#8884d8" strokeWidth={2} />
+                          </LineChart>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-[300px] text-center p-8">
+                            <p className="text-muted-foreground">
+                              Need at least 2 days of historical data to generate predictions.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-[400px] text-center p-8">
+                        <p className="text-lg font-semibold mb-2">Insufficient Data for Predictions</p>
+                        <p className="text-muted-foreground mb-4">
+                          We need more historical appointment data to generate accurate 30-day forecasts.
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Try selecting a longer date range or wait until more appointments are recorded.
+                        </p>
+                      </div>
+                    )
+                  ) : phase3Data && selectedChart === 'course_demand' ? (
+                    phase3Data.predictions && phase3Data.predictions.length > 0 ? (
+                      <BarChart data={phase3Data.predictions} layout="vertical" height={400}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="course_name" type="category" width={200} tick={{ fontSize: 12 }} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="predicted_appointments" fill="#8884d8" />
+                      </BarChart>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-[400px] text-center p-8">
+                        <p className="text-lg font-semibold mb-2">No Course Demand Data Available</p>
+                        <p className="text-muted-foreground mb-4">
+                          We need historical course appointment data to predict future demand.
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Try selecting a date range with course appointments or wait until more data is available.
+                        </p>
+                      </div>
+                    )
+                  ) : phase3Data && selectedChart === 'tutor_workload' ? (
+                    phase3Data.predictions && phase3Data.predictions.length > 0 ? (
+                      <BarChart data={phase3Data.predictions} layout="vertical" height={400}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="tutor_name" type="category" width={150} tick={{ fontSize: 12 }} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="predicted_appointments" fill="#8884d8" />
+                      </BarChart>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-[400px] text-center p-8">
+                        <p className="text-lg font-semibold mb-2">No Tutor Workload Data Available</p>
+                        <p className="text-muted-foreground mb-4">
+                          We need historical tutor appointment data to predict future workload.
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Try selecting tutors with appointment history or wait until more appointments are recorded.
+                        </p>
+                      </div>
+                    )
+                  ) : phase3Data && selectedChart === 'peak_hours_enhanced' ? (
+                    phase3Data.peak_hours && phase3Data.peak_hours.length > 0 ? (
+                      <BarChart data={phase3Data.peak_hours} height={300}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="hour" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="predicted_count" fill="#8884d8">
+                          {phase3Data.peak_hours.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={entry.is_peak ? '#ff7300' : '#8884d8'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-[400px] text-center p-8">
+                        <p className="text-lg font-semibold mb-2">No Peak Hours Data Available</p>
+                        <p className="text-muted-foreground mb-4">
+                          We need historical appointment time data to identify peak hours.
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Try selecting a date range with appointments that have time information.
+                        </p>
+                      </div>
+                    )
+                  ) : comparisonData && (selectedChart === 'tutor_comparison' || selectedChart === 'course_comparison') ? (
+                    comparisonData.comparisons && comparisonData.comparisons.length > 0 ? (
+                      <BarChart data={comparisonData.comparisons.map((comp: any) => ({
+                        name: comp.tutor_name || comp.course_name,
+                        appointments: comp.stats?.total_appointments || 0,
+                        hours: comp.stats?.total_hours || 0
+                      }))} height={300}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="appointments" fill="#8884d8" />
+                        <Bar dataKey="hours" fill="#82ca9d" />
+                      </BarChart>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-[400px] text-center p-8">
+                        <p className="text-lg font-semibold mb-2">No Comparison Data Available</p>
+                        <p className="text-muted-foreground mb-4">
+                          We need appointment data for the selected {selectedChart === 'tutor_comparison' ? 'tutors' : 'courses'} to generate comparisons.
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedChart === 'tutor_comparison' 
+                            ? 'Make sure you have selected at least 2 tutors with appointment history.'
+                            : 'Make sure you have selected at least 2 courses with appointment history.'}
+                        </p>
+                      </div>
+                    )
                   ) : (
                     <BarChart data={rechartsData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -1602,8 +2079,8 @@ export default function ChartsPage() {
                   )}
                 </ResponsiveContainer>
               </div>
-            )}
-            </div>
+                )}
+              </div>
           </CardContent>
         </Card>
       </div>

@@ -14,9 +14,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get current user from Supabase Auth
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    if (sessionError || !session?.user) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -27,10 +27,10 @@ export async function GET(request: NextRequest) {
     const { data: userData } = await supabase
       .from('users')
       .select('role')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single()
 
-    const currentUserRole = userData?.role || session.user.user_metadata?.role || 'tutor'
+    const currentUserRole = userData?.role || user.user_metadata?.role || 'tutor'
 
     // Check if user has permission (admin/manager)
     if (!['admin', 'manager'].includes(currentUserRole)) {
