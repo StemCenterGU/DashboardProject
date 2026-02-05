@@ -3,6 +3,13 @@
 
 # In[1]:
 
+import sys
+import io
+
+# Fix Windows console encoding for emojis
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 """
 WCOnline API Test Notebook
@@ -20,8 +27,8 @@ BASE_URL = "https://gannon.mywconline.com/api"
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
-request_type = "CUSTOM"  # CUSTOM, AVAIL, APPTS, SCHED, STAFF
-request_date = 20250902   # YYYYMMDD format (8 digits) - Change this date
+request_type = "AVAIL"  # CUSTOM, AVAIL, APPTS, SCHED, STAFF
+request_date = 20260125   # YYYYMMDD format (8 digits) - Change this date
 
 # ============================================================================
 # FETCH DATA
@@ -47,13 +54,13 @@ if isinstance(response_json, list):
     df = pd.DataFrame(response_json)
     print(f"\n✅ Response is a LIST with {len(df)} items")
     print("\nFull DataFrame:")
-    display(df)
+    print(df.to_string())
 elif isinstance(response_json, dict):
     for key, value in response_json.items():
         if isinstance(value, list):
             print(f"\n✅ Found list under key '{key}' with {len(value)} items")
             df = pd.DataFrame(value)
-            display(df)
+            print(df.to_string())
             break
     if df is None:
         print("\n⚠️ No list data found in response")
@@ -73,7 +80,7 @@ if df is not None and "Schedule Title" in df.columns:
     print(f"Found {len(stem_df)} STEM Center entries out of {len(df)} total")
 
     if len(stem_df) > 0:
-        display(stem_df)
+        print(stem_df.to_string())
     else:
         print("No STEM Center entries found")
 else:

@@ -7,12 +7,14 @@ import { Label } from "@/components/ui/label"
 import { Calendar, Clock, Users, BookOpen, Plus, Search, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { ScheduleGrid } from "@/components/schedule-grid"
+import { TodayAppointments, UpcomingAppointments } from "@/components/scheduling"
+import { LoadingSpinner } from "@/components/shared"
 
 interface Appointment {
   appointment_id: string
   tutor_name: string
   student_name: string
-  course_name: string | null
+  course_name?: string
   appointment_date: string
   start_time: string
   end_time: string
@@ -34,33 +36,85 @@ interface Availability {
 
 export default function SchedulingPage() {
   const [activeTab, setActiveTab] = useState("schedule")
-  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([])
+  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([])
   const [tutors, setTutors] = useState<Tutor[]>([])
   const [availability, setAvailability] = useState<Availability[]>([])
-  const [loading, setLoading] = useState({ appointments: false, tutors: false, availability: false })
+  const [loading, setLoading] = useState({ today: false, upcoming: false, tutors: false, availability: false })
+
+  // Pagination state for upcoming appointments
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const itemsPerPage = 10
+
+  // Get today's date in local timezone (YYYY-MM-DD format)
+  const getLocalDate = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const today = getLocalDate(new Date())
+
+  // Get tomorrow's date for upcoming appointments
+  const getTomorrow = () => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return getLocalDate(tomorrow)
+  }
 
   useEffect(() => {
     if (activeTab === "appointments") {
-      fetchAppointments()
+      fetchTodayAppointments()
+      fetchUpcomingAppointments(currentPage)
     } else if (activeTab === "tutors") {
       fetchTutors()
     } else if (activeTab === "availability") {
       fetchAvailability()
+      fetchTutors()
     }
-  }, [activeTab])
+  }, [activeTab, currentPage])
 
-  const fetchAppointments = async () => {
-    setLoading(prev => ({ ...prev, appointments: true }))
+  const fetchTodayAppointments = async () => {
+    setLoading(prev => ({ ...prev, today: true }))
     try {
-      const response = await fetch("/api/scheduling/appointments?limit=50")
+      // Fetch only today's appointments
+      const response = await fetch(`/api/scheduling/appointments?limit=50&start_date=${today}&end_date=${today}&sort=asc`)
       if (response.ok) {
         const data = await response.json()
-        setAppointments(data.appointments || [])
+        setTodayAppointments(data.appointments || [])
       }
     } catch (error) {
-      console.error("Error fetching appointments:", error)
+      console.error("Error fetching today's appointments:", error)
     } finally {
-      setLoading(prev => ({ ...prev, appointments: false }))
+      setLoading(prev => ({ ...prev, today: false }))
+    }
+  }
+
+  const fetchUpcomingAppointments = async (page: number = 1) => {
+    setLoading(prev => ({ ...prev, upcoming: true }))
+    try {
+      // Fetch appointments starting from tomorrow
+      const tomorrow = getTomorrow()
+      const response = await fetch(`/api/scheduling/appointments?limit=${itemsPerPage}&page=${page}&start_date=${tomorrow}&sort=asc`)
+      if (response.ok) {
+        const data = await response.json()
+        setUpcomingAppointments(data.appointments || [])
+        setTotalPages(data.totalPages || 1)
+        setTotalCount(data.total || 0)
+      }
+    } catch (error) {
+      console.error("Error fetching upcoming appointments:", error)
+    } finally {
+      setLoading(prev => ({ ...prev, upcoming: false }))
+    }
+  }
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage)
     }
   }
 
@@ -147,80 +201,24 @@ export default function SchedulingPage() {
 
       {/* Appointments View */}
       {activeTab === "appointments" && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Upcoming Appointments</CardTitle>
-                <Button variant="outline" size="sm">
-                  <Search className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loading.appointments ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : appointments.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Calendar className="h-8 w-8 mx-auto mb-2" />
-                  <p>No appointments found</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {appointments.map((apt) => (
-                    <div key={apt.appointment_id} className="border rounded-lg p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{apt.student_name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {apt.tutor_name} • {apt.course_name || "No course"}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">{apt.appointment_date}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {apt.start_time} - {apt.end_time}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          apt.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          apt.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                          apt.status === 'missed' || apt.status === 'no_show' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {apt.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="space-y-6">
+          {/* Today's Appointments - Using reusable component */}
+          <TodayAppointments
+            appointments={todayAppointments}
+            date={today}
+            loading={loading.today}
+          />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button className="w-full" variant="outline">
-                <Plus className="mr-2 h-4 w-4" />
-                Book Appointment
-              </Button>
-              <Button className="w-full" variant="outline">
-                <Calendar className="mr-2 h-4 w-4" />
-                View Calendar
-              </Button>
-              <Button className="w-full" variant="outline">
-                <Users className="mr-2 h-4 w-4" />
-                Manage Tutors
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Upcoming Appointments - Using reusable component */}
+          <UpcomingAppointments
+            appointments={upcomingAppointments}
+            loading={loading.upcoming}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+          />
         </div>
       )}
 
@@ -289,7 +287,7 @@ export default function SchedulingPage() {
                 {tutors.map((tutor) => {
                   const tutorAvailability = availability.filter(avail => avail.tutor_id === tutor.tutor_id)
                   if (tutorAvailability.length === 0) return null
-                  
+
                   return (
                     <div key={tutor.tutor_id} className="border rounded-lg p-4">
                       <h3 className="font-semibold mb-3">{tutor.tutor_name}</h3>

@@ -26,14 +26,35 @@ nextjs-dashboard/
 │
 ├── components/                   # React components
 │   ├── ui/                       # shadcn/ui components
+│   ├── shared/                   # Reusable shared components
+│   │   ├── pagination.tsx        # Pagination controls
+│   │   ├── loading-spinner.tsx   # Loading indicator
+│   │   ├── empty-state.tsx       # Empty state display
+│   │   └── index.ts
+│   ├── scheduling/               # Scheduling-specific components
+│   │   ├── appointment-card.tsx  # Appointment display card
+│   │   ├── today-appointments.tsx
+│   │   ├── upcoming-appointments.tsx
+│   │   └── index.ts
+│   ├── dashboard/                # Dashboard-specific components
+│   │   ├── stats-card.tsx        # Statistics display card
+│   │   └── index.ts
 │   ├── navbar.tsx
 │   ├── schedule-grid.tsx
 │   └── predictive-analytics.tsx
 │
 ├── lib/                          # Utilities & services
+│   ├── analytics/                # Analytics module (organized)
+│   │   ├── index.ts              # Re-exports
+│   │   ├── types.ts              # Analytics types
+│   │   └── scheduling.ts         # SchedulingAnalytics class
+│   ├── supabase/                 # Supabase clients (organized)
+│   │   ├── index.ts              # Re-exports
+│   │   ├── client.ts             # Browser client
+│   │   └── server.ts             # Server client
+│   ├── analytics.ts              # Legacy re-export (backward compatible)
 │   ├── supabase.ts               # Browser Supabase client
 │   ├── supabase-server.ts        # Server Supabase client
-│   ├── analytics.ts               # Analytics engine
 │   ├── wconline.ts               # WCOnline integration
 │   ├── wconline-sync.ts          # WCOnline sync utilities
 │   ├── auth.ts                   # Authentication utilities
@@ -41,6 +62,7 @@ nextjs-dashboard/
 │   └── ml/                       # Machine learning utilities
 │
 ├── types/                        # TypeScript definitions
+│   └── index.ts                  # Comprehensive type definitions
 │
 ├── public/                       # Static assets
 │
@@ -48,16 +70,28 @@ nextjs-dashboard/
 │   ├── wconline/                 # WCOnline data exports
 │   └── tutor-availability-schedule.txt
 │
-├── scripts/                       # Utility scripts
-│   ├── sync/                     # Synchronization scripts
-│   │   └── sync-wconline.py      # Main WCOnline sync script
+├── scripts/                       # Utility scripts (organized)
+│   ├── sync/                     # Core synchronization scripts
+│   │   ├── sync-wconline.py      # Main WCOnline sync script
+│   │   ├── sync-avail-slots.py   # Available slots sync
+│   │   └── README-AVAIL-SYNC.md
 │   ├── data/                     # Data management scripts
 │   │   ├── import-courses-from-appointments.py
 │   │   ├── import-tutor-availability.py
 │   │   ├── extract-tutor-availability.py
 │   │   └── populate-available-slots.py
-│   └── utils/                    # Utility scripts
-│       └── set-admin-role.js
+│   ├── maintenance/              # Database maintenance scripts
+│   │   ├── merge_duplicates.py
+│   │   ├── cleanup_availability_duplicates.py
+│   │   ├── check_availability_duplicates.py
+│   │   ├── fix_avish.py
+│   │   └── smart_update_availability.py
+│   ├── archive/                  # Archived scripts
+│   │   ├── debug/                # Debug/troubleshooting scripts
+│   │   └── tests/                # Test/verification scripts
+│   ├── utils/                    # Utility scripts
+│   │   └── set-admin-role.js
+│   └── README.md                 # Scripts documentation
 │
 ├── database/                     # Database files
 │   ├── supabase-schema.sql       # Main database schema
@@ -96,22 +130,45 @@ Next.js 14+ App Router directory containing all pages and API routes.
 React components organized by functionality.
 
 - **`ui/`** - Reusable UI components from shadcn/ui
+- **`shared/`** - Shared reusable components (Pagination, LoadingSpinner, EmptyState)
+- **`scheduling/`** - Scheduling-specific components (AppointmentCard, TodayAppointments)
+- **`dashboard/`** - Dashboard-specific components (StatsCard)
 - Root level - Feature-specific components
 
 ### `lib/`
 Core utilities and service integrations.
 
-- **`supabase.ts`** - Browser-side Supabase client
-- **`supabase-server.ts`** - Server-side Supabase client
+- **`analytics/`** - Analytics module with organized files
+  - `scheduling.ts` - Main SchedulingAnalytics class
+  - `types.ts` - Type definitions
+  - `index.ts` - Re-exports
+- **`supabase/`** - Supabase clients
+  - `client.ts` - Browser-side client
+  - `server.ts` - Server-side client
 - **`wconline.ts`** - WCOnline API integration
-- **`analytics.ts`** - Analytics and data processing
+- **`wconline-sync.ts`** - WCOnline sync utilities
 
 ### `scripts/`
 Organized by purpose:
 
-- **`sync/`** - Data synchronization scripts (WCOnline → Supabase)
+- **`sync/`** - Core data synchronization scripts (WCOnline → Supabase)
 - **`data/`** - Data import and management scripts
+- **`maintenance/`** - Database cleanup and maintenance scripts
+- **`archive/`** - Archived debug and test scripts
 - **`utils/`** - Utility scripts (admin tools, etc.)
+
+### `types/`
+Comprehensive TypeScript definitions organized by domain:
+
+- User types (User, UserRole, AuthSession)
+- Tutor types (Tutor, TutorAvailability)
+- Appointment types (Appointment, AppointmentStatus, AvailableSlot)
+- Course types (Course)
+- Dashboard types (DashboardSummary, DashboardAlert, RecentActivity)
+- Analytics types (ChartData, AnalyticsFilters, ChartDataset)
+- API types (ApiResponse, PaginatedResponse, ApiError)
+- Sync types (WCOnlineAppointment, SyncResult, SyncStatus)
+- UI types (TabItem, SortOption, FilterOption)
 
 ### `database/`
 All SQL files for database setup and maintenance.
@@ -139,14 +196,43 @@ Data files used by scripts.
 
 ### Data Synchronization Workflow
 
-1. **Sync WCOnline Data**: `python scripts/sync/sync-wconline.py <date>`
+1. **Sync WCOnline Data**: `python scripts/sync/sync-wconline.py <start_date> <end_date>`
 2. **Import Courses**: `python scripts/data/import-courses-from-appointments.py`
 3. **Import Tutor Availability**: `python scripts/data/import-tutor-availability.py`
 4. **Populate Slots**: `python scripts/data/populate-available-slots.py <start> <end>`
 
+### Maintenance Workflow
+
+1. **Check Duplicates**: `python scripts/maintenance/check_availability_duplicates.py`
+2. **Cleanup Duplicates**: `python scripts/maintenance/cleanup_availability_duplicates.py`
+3. **Merge Tutors**: `python scripts/maintenance/merge_duplicates.py`
+
+## 📦 Component Usage
+
+### Shared Components
+```typescript
+import { Pagination, LoadingSpinner, EmptyState } from '@/components/shared'
+```
+
+### Scheduling Components
+```typescript
+import { AppointmentCard, TodayAppointments, UpcomingAppointments } from '@/components/scheduling'
+```
+
+### Dashboard Components
+```typescript
+import { StatsCard } from '@/components/dashboard'
+```
+
+### Types
+```typescript
+import { Appointment, User, ChartData, ApiResponse } from '@/types'
+```
+
 ## 📝 File Naming Conventions
 
 - **Components**: PascalCase (e.g., `ScheduleGrid.tsx`)
+- **Component Files**: kebab-case (e.g., `stats-card.tsx`)
 - **Utilities**: camelCase (e.g., `analytics.ts`)
 - **Scripts**: kebab-case (e.g., `sync-wconline.py`)
 - **Documentation**: UPPER_SNAKE_CASE (e.g., `QUICK_START.md`)
@@ -156,4 +242,3 @@ Data files used by scripts.
 - [Main README](./README.md) - Full project documentation
 - [Scripts README](./scripts/README.md) - Script documentation
 - [Quick Start Guide](./docs/QUICK_START.md) - Setup instructions
-

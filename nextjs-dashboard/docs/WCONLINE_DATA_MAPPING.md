@@ -4,28 +4,50 @@ This document explains what data from WCOnline API can be synced to which Supaba
 
 ## Currently Syncing ✅
 
-### 1. **CUSTOM Type** → `available_slots` table
+### 1. **AVAIL Type** → `available_slots` table ✅ **NEW!**
+**Script**: `scripts/sync/sync-avail-slots.py`
+
 **What we're syncing:**
-- `Staff or Resource` → `tutor_id` (via `find_or_create_tutor`)
+- `Staff or Resource` → `tutor_id` (via `find_or_create_tutor` from tutors table)
 - `Start Time` → `start_time` (converted to 24-hour format)
 - `End Time` → `end_time` (converted to 24-hour format)
 - Date → `slot_date`
+- `Schedule Title` → `schedule_title` (filtered for "STEM CENTER")
+- `Walk-In/Drop-In` → `is_walk_in`
+- `Online` → `is_online`
+- `Focus` → `focus`
+- `Created By` → `created_by`
+- `Modified By` → `modified_by`
+- `Repeating` → `is_repeating`
+- `Course Code` → `course_code`
+- `Course Name` → `course_name`
+- `Course Instructor` → `course_instructor`
 - `source` = 'wconline'
 - `is_booked` = false
 
-**Fields available but NOT currently synced:**
-- `Schedule Title` (used for filtering only)
-- `Staff Email` (could be used for better tutor matching)
+**Known Issues:**
+- ⚠️ Many AVAIL slots have missing end times (91% in test run)
+- These slots are skipped during sync to avoid invalid data
 
-### 2. **AVAIL Type** → `appointments` table
+### 2. **CUSTOM Type** → `appointments` table
+**Script**: `scripts/sync/sync-wconline.py`
+
 **What we're syncing:**
 - `Staff or Resource` → `tutor_id` (via `find_or_create_tutor`)
-- `Student Name` → `student_name`
+- `Student Name` → `student_name` (from "Created By" field)
 - `Start Time` → `start_time` (converted to 24-hour format)
 - `End Time` → `end_time` (converted to 24-hour format)
 - Date → `appointment_date`
+- `Schedule Title` → `schedule_title`
+- `Walk-In/Drop-In` → `is_walk_in`
+- `Missed/No-Show` → `is_missed` and `status`
+- `Online` → `is_online`
+- `Focus` → `focus` (contains "course_name - course_instructor")
+- `Repeating` → `is_repeating`
+- `Course` → `course_name` (extracted from focus field)
+- `Course instructor` → `course_instructor` (extracted from focus field)
 - `source` = 'wconline'
-- `status` = 'scheduled'
+- `status` = 'scheduled' (or 'missed'/'no_show' if marked)
 
 **Fields available but NOT currently synced:**
 - `Course Code` → Could map to `course_id` (via `courses` table)

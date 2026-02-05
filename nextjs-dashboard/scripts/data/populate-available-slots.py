@@ -8,7 +8,22 @@ Excludes slots that are already booked (exist in appointments table)
 import requests
 import sys
 import os
+import io
 from datetime import datetime, timedelta
+
+# Fix Windows console encoding for emojis
+if sys.platform == 'win32':
+    try:
+        # Python 3.7+ supports reconfigure
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except (AttributeError, io.UnsupportedOperation):
+        # Fallback to wrapping
+        try:
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+        except:
+            pass
 
 # Load environment variables
 try:
@@ -123,18 +138,18 @@ def insert_available_slots(slots, date_str):
             if response.status_code in [200, 201]:
                 inserted += 1
         except Exception as e:
-            print(f"   ⚠️  Error inserting slot: {e}")
+            print(f"   [!] Error inserting slot: {e}")
     
     return inserted
 
 def main():
     """Main function"""
     print("="*70)
-    print("📅 Populate Available Slots from Tutor Availability")
+    print("[*] Populate Available Slots from Tutor Availability")
     print("="*70)
     
     if not SUPABASE_URL or not SUPABASE_KEY:
-        print("\n❌ Supabase credentials not found!")
+        print("\n[X] Supabase credentials not found!")
         print("   Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY")
         sys.exit(1)
     
@@ -158,28 +173,28 @@ def main():
         end_date = end_date.replace(hour=0, minute=0, second=0, microsecond=0)
         
         if start_date > end_date:
-            print(f"\n⚠️  Start date ({start_date.date()}) is after end date ({end_date.date()})")
+            print(f"\n[!] Start date ({start_date.date()}) is after end date ({end_date.date()})")
             sys.exit(1)
         
-        print(f"\n📅 Date range: {start_date.date()} to {end_date.date()}")
+        print(f"\n[*] Date range: {start_date.date()} to {end_date.date()}")
     except ValueError as e:
-        print(f"\n❌ Invalid date format. Use YYYY-MM-DD format (e.g., 2025-01-01)")
+        print(f"\n[X] Invalid date format. Use YYYY-MM-DD format (e.g., 2025-01-01)")
         print(f"   Error: {e}")
         sys.exit(1)
     
     # Fetch tutor availability patterns
-    print("\n📡 Fetching tutor availability patterns...")
+    print("\n[>] Fetching tutor availability patterns...")
     tutor_availability = get_tutor_availability()
     
     if not tutor_availability:
-        print("❌ No tutor availability patterns found!")
+        print("[X] No tutor availability patterns found!")
         print("   Please run import-tutor-availability.py first to import tutor schedules")
         sys.exit(1)
     
-    print(f"✅ Found {len(tutor_availability)} availability patterns")
+    print(f"[OK] Found {len(tutor_availability)} availability patterns")
     
     # Generate slots for each date
-    print(f"\n💾 Generating available slots (excluding booked appointments)...")
+    print(f"\n[>] Generating available slots (excluding booked appointments)...")
     current_date = start_date
     total_slots = 0
     total_inserted = 0
@@ -223,9 +238,9 @@ def main():
         current_date += timedelta(days=1)
     
     print("\n" + "="*70)
-    print("✅ Complete!")
+    print("[OK] Complete!")
     print("="*70)
-    print(f"\n📊 Summary:")
+    print(f"\n[*] Summary:")
     print(f"   Total available slots generated: {total_slots}")
     print(f"   Successfully inserted: {total_inserted}")
     print(f"   Excluded (booked): {total_excluded}")

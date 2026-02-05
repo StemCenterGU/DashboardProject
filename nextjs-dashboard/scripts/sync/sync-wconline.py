@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Unified WCOnline Sync Script
 Fetches data from WCOnline API and syncs directly to Supabase
 Based on api.ipynb approach
 """
 
+import sys
+import io
+
+# Fix Windows console encoding for emojis
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 import requests
 import pandas as pd
 import json
-import sys
 import os
 import time
 import re
@@ -112,13 +120,6 @@ def filter_stem_center(data):
 # ============================================================================
 def get_supabase_client():
     """Get Supabase client"""
-    # Try to load from .env.local
-    try:
-        from dotenv import load_dotenv
-        load_dotenv('.env.local')
-    except:
-        pass
-    
     url = os.getenv('NEXT_PUBLIC_SUPABASE_URL') or os.getenv('SUPABASE_URL')
     key = os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('SUPABASE_SERVICE_KEY')
     
@@ -128,16 +129,9 @@ def get_supabase_client():
         print("   Or create .env.local file with these variables")
         return None
     
-    if HAS_SUPABASE_PY:
-        try:
-            supabase = create_client(url, key)
-            return supabase
-        except Exception as e:
-            print(f"❌ Error creating Supabase client: {e}")
-            return None
-    else:
-        # Return a simple dict-based client for HTTP requests
-        return {'url': url, 'key': key, 'use_http': True}
+    # Always use HTTP mode for reliability
+    return {'url': url, 'key': key, 'use_http': True}
+
 
 def convert_to_24_hour(time_str):
     """Convert 12-hour time to 24-hour format"""
@@ -169,180 +163,86 @@ def convert_to_24_hour(time_str):
     
     return f"{hours:02d}:{minutes}"
 
-def find_tutor_by_name(supabase, tutor_name):
-    """Find tutor_id by tutor_name from simplified tutors table (tutor_id UUID, tutor_name)"""
-    if not tutor_name:
-        return None
-    
-    # Normalize the tutor name (strip whitespace, handle periods)
-    tutor_name = tutor_name.strip()
-    
+def get_all_tutors(supabase):
+    """Fetch all tutors from the database and return a cache."""
+    print("📡 Fetching all tutors from database...")
+    tutor_cache = {}
     try:
-        url = SUPABASE_URL
-        key = SUPABASE_KEY
-        
-        if not url or not key:
-            return None
-        
-        headers = {
-            'apikey': key,
-            'Authorization': f'Bearer {key}',
-            'Content-Type': 'application/json'
-        }
-        
-        import urllib.parse
-        
-        # Normalize: remove all periods and extra spaces for matching
-        # "Robert T." from WCOnline should match "Robert T" in database
-        tutor_name_clean = tutor_name.strip().replace('.', '').strip()
-        tutor_normalized = tutor_name_clean.lower()
-        
-        # Try exact match first (with cleaned name, no period)
-        encoded_name_clean = urllib.parse.quote(tutor_name_clean)
-        response = requests.get(
-            f"{url}/rest/v1/tutors?tutor_name=eq.{encoded_name_clean}&select=tutor_id",
-            headers=headers
-        )
-        
-        if response.status_code == 200 and response.json():
-            return response.json()[0]['tutor_id']
-        
-        # Try case-insensitive exact match (no period) - use ilike for case-insensitive
-        response = requests.get(
-            f"{url}/rest/v1/tutors?tutor_name=ilike.{encoded_name_clean}&select=tutor_id,tutor_name&limit=50",
-            headers=headers
-        )
-        
-        if response.status_code == 200 and response.json():
-            for tutor in response.json():
-                db_name = tutor.get('tutor_name', '').strip()
-                db_normalized = db_name.lower().replace('.', '').strip()
-                
-                # Exact match after removing all periods
-                if tutor_normalized == db_normalized:
-                    return tutor.get('tutor_id')
-        
-        # Fallback: Fetch all tutors and match client-side (for edge cases)
-        # This handles cases where the query might not work due to special characters
-        response = requests.get(
-            f"{url}/rest/v1/tutors?select=tutor_id,tutor_name&limit=1000",
-            headers=headers
-        )
-        
-        if response.status_code == 200 and response.json():
-            for tutor in response.json():
-                db_name = tutor.get('tutor_name', '').strip()
-                db_normalized = db_name.lower().replace('.', '').strip()
-                
-                # Exact match after removing all periods
-                if tutor_normalized == db_normalized:
-                    return tutor.get('tutor_id')
-        
-        return None
-    except Exception as e:
-        return None
-
-def find_or_create_tutor(supabase, tutor_name, tutor_email=None):
-    """Find or create tutor in Supabase (legacy function for backward compatibility)"""
-    if not tutor_name:
-        return None
-    
-    # First try to find by name in simplified tutors table
-    tutor_id = find_tutor_by_name(supabase, tutor_name)
-    if tutor_id:
-        return tutor_id
-    
-    # Generate placeholder email if needed
-    if not tutor_email:
-        tutor_email = f"{tutor_name.lower().replace(' ', '').replace('.', '')}@tutor.gannon.edu"
-    
-    # Check if using HTTP mode (dict) or supabase-py client
-    use_http = isinstance(supabase, dict) and supabase.get('use_http')
-    
-    if use_http:
-        # Use HTTP requests directly
         url = supabase['url']
         key = supabase['key']
         headers = {
             'apikey': key,
-            'Authorization': f'Bearer {key}',
-            'Content-Type': 'application/json'
+            'Authorization': f'Bearer {key}'
         }
-        
-        # Find user by email
         response = requests.get(
-            f"{url}/rest/v1/users?email=eq.{tutor_email.lower()}&select=user_id",
+            f"{url}/rest/v1/tutors?select=tutor_id,tutor_name",
             headers=headers
         )
-        
-        if response.status_code == 200 and response.json():
-            user_id = response.json()[0]['user_id']
-        else:
-            # Create new user
-            response = requests.post(
-                f"{url}/rest/v1/users",
-                headers=headers,
-                json={
-                    'email': tutor_email.lower(),
-                    'full_name': tutor_name,
-                    'role': 'tutor',
-                    'active': True
-                }
-            )
-            if response.status_code in [200, 201] and response.json():
-                user_id = response.json()[0]['user_id']
-            else:
-                return None
-        
-        # Find or create tutor
-        response = requests.get(
-            f"{url}/rest/v1/tutors?user_id=eq.{user_id}&select=tutor_id",
-            headers=headers
-        )
-        
-        if response.status_code == 200 and response.json():
-            return response.json()[0]['tutor_id']
-        else:
-            response = requests.post(
-                f"{url}/rest/v1/tutors",
-                headers=headers,
-                json={'user_id': user_id, 'is_available': True}
-            )
-            if response.status_code in [200, 201] and response.json():
-                return response.json()[0]['tutor_id']
-        
+        if response.status_code == 200:
+            tutors = response.json()
+            for tutor in tutors:
+                # Normalize cache key: lowercase, strip, remove periods (to match lookup logic)
+                cache_key = tutor['tutor_name'].lower().strip().replace('.', '')
+                tutor_cache[cache_key] = tutor['tutor_id']
+            print(f"✅ Loaded {len(tutor_cache)} tutors into cache.")
+    except Exception as e:
+        print(f"⚠️  Could not fetch tutors: {e}")
+    return tutor_cache
+
+def find_tutor_by_name(tutor_cache, tutor_name):
+    """Find tutor_id by tutor_name from the cache."""
+    if not tutor_name:
         return None
-    else:
-        # Use supabase-py
-        result = supabase.table('users').select('user_id').eq('email', tutor_email.lower()).limit(1).execute()
+    
+    tutor_name_clean = tutor_name.strip().replace('.', '').lower()
+    return tutor_cache.get(tutor_name_clean)
+
+def find_or_create_tutor(supabase, tutor_cache, tutor_name):
+    """Find or create tutor in Supabase tutors table, using a cache."""
+    if not tutor_name:
+        return None
+    
+    # First try to find by name in the cache
+    tutor_id = find_tutor_by_name(tutor_cache, tutor_name)
+    if tutor_id:
+        return tutor_id
+    
+    # If not found, create a new tutor
+    print(f"      Creating new tutor: '{tutor_name}'")
+    
+    # Use HTTP requests directly
+    url = supabase['url']
+    key = supabase['key']
+    headers = {
+        'apikey': key,
+        'Authorization': f'Bearer {key}',
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+    }
+    
+    try:
+        response = requests.post(
+            f"{url}/rest/v1/tutors",
+            headers=headers,
+            json={'tutor_name': tutor_name.strip()}
+        )
         
-        if result.data and len(result.data) > 0:
-            user_id = result.data[0]['user_id']
-        else:
-            result = supabase.table('users').insert({
-                'email': tutor_email.lower(),
-                'full_name': tutor_name,
-                'role': 'tutor',
-                'active': True
-            }).select('user_id').execute()
-            
-            if not result.data:
+        if response.status_code in [200, 201] and response.text:
+            try:
+                data = response.json()
+                if data:
+                    new_tutor_id = data[0]['tutor_id']
+                    # Add the new tutor to the cache
+                    tutor_cache[tutor_name.strip().lower()] = new_tutor_id
+                    return new_tutor_id
+            except json.JSONDecodeError:
+                print(f"      ❌ Failed to decode JSON response when creating tutor: {response.text}")
                 return None
-            user_id = result.data[0]['user_id']
-        
-        result = supabase.table('tutors').select('tutor_id').eq('user_id', user_id).limit(1).execute()
-        
-        if result.data and len(result.data) > 0:
-            return result.data[0]['tutor_id']
         else:
-            result = supabase.table('tutors').insert({
-                'user_id': user_id,
-                'is_available': True
-            }).select('tutor_id').execute()
-            
-            if result.data:
-                return result.data[0]['tutor_id']
-        
+            print(f"      ❌ Failed to create tutor: {response.status_code} - {response.text}")
+            return None
+    except Exception as e:
+        print(f"      ❌ An unexpected error occurred while creating tutor: {e}")
         return None
 
 def find_or_create_course(supabase, course_code=None, course_name=None):
@@ -453,11 +353,17 @@ def find_or_create_course(supabase, course_code=None, course_name=None):
         
         return None
 
-def sync_available_slot(supabase, slot, date_str):
+def sync_available_slot(supabase, tutor_cache, slot, date_str):
     """Sync an available slot to Supabase with all WCOnline fields"""
-    tutor_name = slot.get('Staff or Resource', '')
-    tutor_email = slot.get('Staff Email', '')
-    tutor_id = find_or_create_tutor(supabase, tutor_name, tutor_email)
+    tutor_name = slot.get('Staff or Resource') or slot.get('Resource', '')
+
+    # Skip if it's clearly not a tutor name (e.g., exam names, events)
+    skip_keywords = ['exam', 'test', 'workshop', 'seminar', 'event', 'meeting', 'readiness']
+    if any(keyword in tutor_name.lower() for keyword in skip_keywords):
+        print(f"      ⚠️  Skipping non-tutor resource: '{tutor_name}'")
+        return True # Return True to not count it as a failure
+
+    tutor_id = find_or_create_tutor(supabase, tutor_cache, tutor_name)
     
     if not tutor_id:
         return False
@@ -551,7 +457,7 @@ def sync_available_slot(supabase, slot, date_str):
     except Exception as e:
         return False
 
-def sync_appointment(supabase, appointment, date_str):
+def sync_appointment(supabase, tutor_cache, appointment, date_str):
     """Sync a booked appointment from CUSTOM data to Supabase with checked fields only"""
     # Extract checked fields from WCOnline CUSTOM data (booked appointments)
     # Checked fields: Schedule Title, Staff or Resource, Appointment Date, Start Time, End Time,
@@ -568,10 +474,10 @@ def sync_appointment(supabase, appointment, date_str):
         print(f"      ⚠️  Skipping non-tutor resource: '{tutor_name}'")
         return False
     
-    # Find tutor by name (using simplified tutors table)
-    tutor_id = find_tutor_by_name(supabase, tutor_name)
+    # Find or create tutor (using tutor_cache for efficiency)
+    tutor_id = find_or_create_tutor(supabase, tutor_cache, tutor_name)
     if not tutor_id:
-        print(f"      ⚠️  Tutor '{tutor_name}' not found in tutors table")
+        print(f"      ⚠️  Could not find or create tutor: '{tutor_name}'")
         return False
     
     # Extract checked time fields
@@ -762,6 +668,9 @@ def sync_date_to_supabase(date, supabase):
     print(f"📅 Syncing date: {date_str}")
     print(f"{'='*70}\n")
     
+    # Load tutor cache once for this date
+    tutor_cache = get_all_tutors(supabase)
+    
     # Check if old data exists in database
     has_existing_slots, has_existing_appts = check_existing_data(supabase, date_str)
     if has_existing_appts:
@@ -843,7 +752,7 @@ def sync_date_to_supabase(date, supabase):
         for idx, appointment in enumerate(custom_appointments, 1):
             tutor_name = appointment.get('Staff or Resource', 'Unknown')
             print(f"   [{idx}/{len(custom_appointments)}] {tutor_name}...", end=' ')
-            if sync_appointment(supabase, appointment, date_str):
+            if sync_appointment(supabase, tutor_cache, appointment, date_str):
                 synced_appts += 1
                 print("✅")
             else:
@@ -867,6 +776,47 @@ def sync_date_range(start_date, end_date, supabase):
             time.sleep(2)  # Small delay between dates
         current += timedelta(days=1)
 
+def sync_avail_data_for_date_range(start_date, end_date, supabase):
+    """Sync a range of dates for AVAIL data"""
+    tutor_cache = get_all_tutors(supabase)
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    end = datetime.strptime(end_date, "%Y-%m-%d")
+
+    current = start
+    while current <= end:
+        date_str = current.strftime("%Y-%m-%d")
+        print(f"\n{'='*70}")
+        print(f"📅 Syncing AVAIL data for date: {date_str}")
+        print(f"{'='*70}\n")
+        try:
+            avail_data = fetch_wconline_data('AVAIL', current)
+            avail_slots = filter_stem_center(avail_data if isinstance(avail_data, list) else [])
+            if len(avail_slots) > 0:
+                print(f"✅ Found {len(avail_slots)} available slots")
+                synced_slots = 0
+                failed_count = 0
+                for idx, slot in enumerate(avail_slots, 1):
+                    tutor_name_from_slot = slot.get('Staff or Resource') or slot.get('Resource', '')
+                    print(f"   [{idx}/{len(avail_slots)}] Tutor: '{tutor_name_from_slot}'...", end=' ')
+                    if sync_available_slot(supabase, tutor_cache, slot, date_str):
+                        synced_slots += 1
+                        print("✅")
+                    else:
+                        failed_count += 1
+                        print("❌")
+                print(f"\n✅ Synced {synced_slots}/{len(avail_slots)} available slots")
+                if failed_count > 0:
+                    print(f"❌ Failed: {failed_count} available slots")
+            else:
+                print("ℹ️  API returned 0 available slots")
+
+        except Exception as e:
+            print(f"❌ Error fetching AVAIL data: {e}")
+
+        if current < end:
+            time.sleep(2)  # Small delay between dates
+        current += timedelta(days=1)
+
 # ============================================================================
 # MAIN
 # ============================================================================
@@ -876,44 +826,32 @@ if __name__ == "__main__":
     if not supabase:
         print("\n❌ Cannot proceed without Supabase connection")
         sys.exit(1)
-    
-    # Parse arguments - accept specific dates (no hardcoded ranges)
-    if len(sys.argv) < 2:
+
+    start_date_str = None
+    end_date_str = None
+
+    if len(sys.argv) == 3:
+        start_date_str = sys.argv[1]
+        end_date_str = sys.argv[2]
+    elif len(sys.argv) == 1:
+        start_date = datetime.now()
+        end_date = start_date + timedelta(days=6)
+        start_date_str = start_date.strftime("%Y-%m-%d")
+        end_date_str = end_date.strftime("%Y-%m-%d")
+    else:
         print("Usage:")
-        print("  python sync-wconline.py <date>                    # Single date (YYYY-MM-DD)")
-        print("  python sync-wconline.py <date1> <date2> ...        # Multiple specific dates")
-        print("  python sync-wconline.py <start> <end>              # Date range (YYYY-MM-DD)")
-        print("\nExample:")
-        print("  python sync-wconline.py 2025-01-15")
-        print("  python sync-wconline.py 2025-01-15 2025-01-16 2025-01-17")
-        print("  python sync-wconline.py 2025-01-01 2025-01-14")
+        print("  python sync-wconline.py             # Sync for the next 7 days")
+        print("  python sync-wconline.py <start_date> <end_date>  # Sync for a specific date range (YYYY-MM-DD)")
         sys.exit(1)
     
-    if len(sys.argv) == 2:
-        # Single date
-        sync_date_to_supabase(sys.argv[1], supabase)
-    elif len(sys.argv) == 3:
-        # Check if it's a date range (two dates) or two separate dates
-        try:
-            date1 = datetime.strptime(sys.argv[1], "%Y-%m-%d")
-            date2 = datetime.strptime(sys.argv[2], "%Y-%m-%d")
-            # If second date is after first, treat as range
-            if date2 > date1:
-                sync_date_range(sys.argv[1], sys.argv[2], supabase)
-            else:
-                # Two separate dates
-                sync_date_to_supabase(sys.argv[1], supabase)
-                time.sleep(2)
-                sync_date_to_supabase(sys.argv[2], supabase)
-        except ValueError:
-            print("❌ Invalid date format. Use YYYY-MM-DD")
-            sys.exit(1)
-    else:
-        # Multiple specific dates
-        for date_arg in sys.argv[1:]:
-            sync_date_to_supabase(date_arg, supabase)
-            if date_arg != sys.argv[-1]:  # Don't sleep after last date
-                time.sleep(2)
-    
-    print("\n✨ All done!")
+    try:
+        # Validate dates
+        datetime.strptime(start_date_str, "%Y-%m-%d")
+        datetime.strptime(end_date_str, "%Y-%m-%d")
+    except ValueError:
+        print("❌ Invalid date format. Use YYYY-MM-DD.")
+        sys.exit(1)
 
+    sync_date_range(start_date_str, end_date_str, supabase)
+
+    print("\n✨ All done!")

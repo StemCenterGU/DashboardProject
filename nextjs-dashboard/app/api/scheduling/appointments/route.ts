@@ -9,42 +9,61 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams
-    const limit = parseInt(searchParams.get("limit") || "50")
+    const limit = parseInt(searchParams.get("limit") || "10")
+    const page = parseInt(searchParams.get("page") || "1")
+    const offset = (page - 1) * limit
     const status = searchParams.get("status")
     const startDate = searchParams.get("start_date")
     const endDate = searchParams.get("end_date")
+    const sortOrder = searchParams.get("sort") === "asc" ? true : false
 
+    // Build query for data
     let query = supabase
       .from("appointments")
-      .select("appointment_id, tutor_id, tutor_name, student_name, student_email, course_name, appointment_date, start_time, end_time, status, is_online, is_walk_in, is_missed")
-      .order("appointment_date", { ascending: false })
-      .order("start_time", { ascending: false })
-      .limit(limit)
+      .select("appointment_id, tutor_id, tutor_name, student_name, course_name, appointment_date, start_time, end_time, status")
+      .order("appointment_date", { ascending: sortOrder })
+      .order("start_time", { ascending: sortOrder })
+      .range(offset, offset + limit - 1)
+
+    // Build count query with same filters
+    let countQuery = supabase
+      .from("appointments")
+      .select("*", { count: "exact", head: true })
 
     if (status) {
       query = query.eq("status", status)
+      countQuery = countQuery.eq("status", status)
     }
 
     if (startDate) {
       query = query.gte("appointment_date", startDate)
+      countQuery = countQuery.gte("appointment_date", startDate)
     }
 
     if (endDate) {
       query = query.lte("appointment_date", endDate)
+      countQuery = countQuery.lte("appointment_date", endDate)
     }
 
-    const { data: appointments, error } = await query
+    // Execute both queries
+    const [dataResult, countResult] = await Promise.all([query, countQuery])
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (dataResult.error) {
+      return NextResponse.json({ error: dataResult.error.message }, { status: 500 })
     }
+
+    const totalCount = countResult.count || 0
+    const totalPages = Math.ceil(totalCount / limit)
 
     return NextResponse.json({
-      appointments: appointments || [],
-      count: appointments?.length || 0
+      appointments: dataResult.data || [],
+      count: dataResult.data?.length || 0,
+      total: totalCount,
+      page,
+      limit,
+      totalPages
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
-
