@@ -14,6 +14,8 @@ Run this in the Supabase SQL Editor (once per project):
 
 ## 2. Assign developer to your account
 
+If the user doesn’t appear in the **users** table (e.g. they only exist in Supabase Auth), the set-role API will **create** their row from Auth and set the role in one step. Ensure `SUPABASE_SERVICE_ROLE_KEY` is set in the environment.
+
 **Option A — npm script (dev server must be running):**
 
 ```bash

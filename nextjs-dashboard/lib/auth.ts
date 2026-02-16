@@ -4,6 +4,7 @@
  */
 
 import { createServerClient } from './supabase-server'
+import { ensureUserRow } from './ensure-user'
 
 export interface User {
   user_id: string
@@ -14,7 +15,8 @@ export interface User {
 }
 
 /**
- * Get current authenticated user from Supabase Auth
+ * Get current authenticated user from Supabase Auth.
+ * If the user has no row in the users table, one is created on first load (sync on login).
  */
 export async function getCurrentUser(): Promise<User | null> {
   try {
@@ -24,34 +26,35 @@ export async function getCurrentUser(): Promise<User | null> {
     }
 
     const { data: { session }, error } = await supabase.auth.getSession()
-    
+
     if (error || !session?.user) {
       return null
     }
 
-    // Get role from users table if available, otherwise use metadata
     let role = session.user.user_metadata?.role || 'tutor'
-    
-    try {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .single()
-      
-      if (userData?.role) {
-        role = userData.role
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .single()
+
+    if (userData?.role) {
+      role = userData.role
+    } else {
+      // No row in users table: ensure one exists (e.g. old Auth user or after table clear)
+      const ensured = await ensureUserRow(supabase, session.user)
+      if (ensured?.role) {
+        role = ensured.role
       }
-    } catch (error) {
-      // Users table lookup failed, use metadata role
     }
 
     return {
       user_id: session.user.id,
       email: session.user.email || '',
       full_name: session.user.user_metadata?.full_name || session.user.email || '',
-      role: role,
-      tutor_id: session.user.user_metadata?.tutor_id
+      role,
+      tutor_id: session.user.user_metadata?.tutor_id,
     }
   } catch (error) {
     console.error('Error getting current user:', error)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
+import { ensureUserRow } from '@/lib/ensure-user'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +13,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get user from Supabase Auth
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
@@ -22,18 +22,31 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get user data from users table
-    const { data: userData } = await supabase
+    const { data: userDataFromTable } = await supabase
       .from('users')
       .select('user_id, email, full_name, role, active')
       .eq('user_id', user.id)
       .single()
 
+    let userData = userDataFromTable
+    if (!userData) {
+      const ensured = await ensureUserRow(supabase, user)
+      if (ensured) {
+        userData = {
+          user_id: ensured.user_id,
+          email: ensured.email,
+          full_name: ensured.full_name,
+          role: ensured.role,
+          active: ensured.active,
+        }
+      }
+    }
+
     return NextResponse.json({
       user_id: user.id,
       email: user.email,
-      full_name: userData?.full_name || user.user_metadata?.full_name || '',
-      role: userData?.role || user.user_metadata?.role || 'tutor',
+      full_name: userData?.full_name ?? user.user_metadata?.full_name ?? '',
+      role: userData?.role ?? user.user_metadata?.role ?? 'tutor',
       active: userData?.active ?? true,
     })
   } catch (error) {
