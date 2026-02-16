@@ -17,22 +17,21 @@ const nextConfig = {
     ]
   },
   webpack: (config) => {
-    // Use cwd so aliases work when build runs from project root (e.g. Vercel Root Directory)
-    const root = path.resolve(process.cwd());
-    const aliases = {
-      ...config.resolve?.alias,
+    // Root = directory containing this config file (Next app root when Vercel Root Directory is set)
+    const root = path.resolve(__dirname);
+    // Our aliases first so they override any existing; then spread existing alias
+    const ourAliases = {
       '@': root,
-      // Explicit aliases so @/lib/* resolve reliably on Vercel
-      '@/lib/supabase': path.join(root, 'lib', 'supabase'),
-      '@/lib/utils': path.join(root, 'lib', 'utils'),
-      '@/lib/auth': path.join(root, 'lib', 'auth'),
-      '@/lib/supabase-server': path.join(root, 'lib', 'supabase-server'),
-      '@/lib/analytics': path.join(root, 'lib', 'analytics'),
-      '@/lib/ml/predictions': path.join(root, 'lib', 'ml', 'predictions'),
-      '@/lib/wconline-sync': path.join(root, 'lib', 'wconline-sync'),
+      '@/lib/supabase': path.resolve(root, 'lib/supabase'),
+      '@/lib/utils': path.resolve(root, 'lib/utils'),
+      '@/lib/auth': path.resolve(root, 'lib/auth'),
+      '@/lib/supabase-server': path.resolve(root, 'lib/supabase-server'),
+      '@/lib/analytics': path.resolve(root, 'lib/analytics'),
+      '@/lib/ml/predictions': path.resolve(root, 'lib/ml/predictions'),
+      '@/lib/wconline-sync': path.resolve(root, 'lib/wconline-sync'),
     };
     config.resolve = config.resolve || {};
-    config.resolve.alias = aliases;
+    config.resolve.alias = { ...config.resolve.alias, ...ourAliases };
     return config;
   },
 };

@@ -16,6 +16,9 @@ downloads/
 eggs/
 .eggs/
 lib/
+# Next.js app lib (do not ignore)
+!nextjs-dashboard/lib/
+!nextjs-dashboard/lib/**
 lib64/
 parts/
 sdist/
