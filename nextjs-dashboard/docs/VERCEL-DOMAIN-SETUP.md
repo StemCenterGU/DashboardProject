@@ -6,6 +6,23 @@ Use a **subdomain** of maniar.xyz for the STEM Face Dashboard on Vercel, with DN
 
 ---
 
+## Make the domain valid (domain already added in Vercel)
+
+If you’ve added the domain in Vercel but it still shows as **Invalid** or **Pending**:
+
+1. **Add the DNS record** at your DNS provider (e.g. Cloudflare):
+   - **Type:** CNAME  
+   - **Name:** the subdomain only (e.g. `dashboard` for `dashboard.maniar.xyz`)  
+   - **Target:** `cname.vercel-dns.com` (or the value Vercel shows under **Domains** for your domain)  
+   - **Proxy:** **DNS only** (grey cloud). Do **not** use “Proxied” (orange) or Vercel’s SSL may fail.
+2. **Save** the record and wait **5–15 minutes** for DNS to propagate.
+3. In Vercel **Settings → Domains**, click **Refresh** or wait; status should change to **Valid** and SSL will be issued automatically.
+4. If it stays invalid: confirm the CNAME name/target match exactly what Vercel shows, and that the record is DNS-only at Cloudflare.
+
+**Apex domain (e.g. `maniar.xyz`)?** Use the **A** records Vercel shows (e.g. `76.76.21.21`) at your DNS provider instead of CNAME.
+
+---
+
 ## 1. Deploy the app on Vercel
 
 1. Go to [vercel.com](https://vercel.com) and sign in (GitHub recommended).
