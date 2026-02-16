@@ -66,3 +66,15 @@ So the production build uses Webpack and explicitly resolves `@/lib/...` to `./l
 | Build / alias | Use `next build --webpack` and keep the `@` alias in **next.config.mjs** if path errors persist. |
 
 After fixing Root Directory and/or pushing the missing files, trigger a new deployment on Vercel.
+
+---
+
+## 5. ENOENT: page_client-reference-manifest.js (route conflict)
+
+If the build fails at **"Collecting build traces"** with:
+
+`ENOENT: no such file or directory, lstat '.../app/(dashboard)/page_client-reference-manifest.js'`
+
+**Cause:** Route groups like `(dashboard)` do not add URL segments. So `app/page.tsx` and `app/(dashboard)/page.tsx` both map to **`/`**, which is invalid and breaks manifest generation.
+
+**Fix:** Have only one page for `/`. This project uses `app/page.tsx` for `/` (redirect to login). Do **not** add `app/(dashboard)/page.tsx`; use `app/(dashboard)/dashboard/page.tsx` for the `/dashboard` route instead.
