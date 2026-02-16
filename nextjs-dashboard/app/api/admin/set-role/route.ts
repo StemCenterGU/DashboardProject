@@ -5,7 +5,7 @@ import { createServerClient } from '@/lib/supabase-server'
  * Set user role (for initial admin setup)
  * 
  * POST /api/admin/set-role
- * Body: { email: string, role: 'admin' | 'manager' | 'lead_tutor' | 'tutor' }
+ * Body: { email: string, role: 'admin' | 'manager' | 'lead_tutor' | 'tutor' | 'developer' }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const validRoles = ['admin', 'manager', 'lead_tutor', 'tutor']
+    const validRoles = ['admin', 'manager', 'lead_tutor', 'tutor', 'developer']
     if (!validRoles.includes(role)) {
       return NextResponse.json(
         { error: `Invalid role. Must be one of: ${validRoles.join(', ')}` },

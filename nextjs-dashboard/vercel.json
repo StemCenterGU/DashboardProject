@@ -2,8 +2,7 @@
   "crons": [
     {
       "path": "/api/sync/wconline/scheduled",
-      "schedule": "0 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
-

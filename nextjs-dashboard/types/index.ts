@@ -7,7 +7,7 @@
 // USER TYPES
 // ============================================================================
 
-export type UserRole = 'tutor' | 'lead_tutor' | 'manager' | 'admin'
+export type UserRole = 'tutor' | 'lead_tutor' | 'manager' | 'admin' | 'developer'
 
 export interface User {
   user_id: string
