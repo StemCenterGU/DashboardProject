@@ -63,7 +63,7 @@ So the production build uses Webpack and explicitly resolves `@/lib/...` to `./l
 | Root Directory | Set to the folder that contains `package.json` and `lib/` (e.g. `stem-face-dashboard/nextjs-dashboard` or leave empty if repo root is the app). |
 | Branch content | Ensure `lib/` and the rest of the app are committed and pushed to the branch you deploy (e.g. **version2**). |
 | baseUrl | Keep `"baseUrl": "."` in **tsconfig.json**. |
-| Build / alias | Use `next build --webpack` and keep the `@` alias in **next.config.mjs** if path errors persist. |
+| Build / alias | Use **Webpack** for the build. **vercel.json** sets `"buildCommand": "npx next build --webpack"` so Vercel always uses Webpack (and our aliases). Keep the `@` alias in **next.config.mjs**. Do not remove `--webpack` or Turbopack will run and break `@/lib/*` resolution. |
 
 After fixing Root Directory and/or pushing the missing files, trigger a new deployment on Vercel.
 

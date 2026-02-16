@@ -1,8 +1,4 @@
 {
-  "crons": [
-    {
-      "path": "/api/sync/wconline/scheduled",
-      "schedule": "0 0 * * *"
-    }
-  ]
+  "buildCommand": "npx next build --webpack",
+  "crons": [{"path": "/api/sync/wconline/scheduled", "schedule": "0 0 * * *"}]
 }
