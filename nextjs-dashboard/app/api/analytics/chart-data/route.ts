@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       chart_data: chartData,
       chart_type: chartType,
-      title: titles[dataset] || dataset.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      title: titles[dataset] || dataset.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
       dataset,
       summary: summaryStats
     })
@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       chart_data: chartData,
       chart_type: chart_type,
-      title: titles[dataset] || dataset.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      title: titles[dataset] || dataset.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
       dataset,
       summary: summaryStats
     })

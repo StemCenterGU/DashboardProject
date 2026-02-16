@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
       // Format for frontend
       const tutorNames = Array.from(new Set(Array.from(tutorMap.values())))
       const formattedData = tutorNames.map(tutorName => {
-        const row: { tutor: string; [key: string]: number } = { tutor: tutorName }
+        const row: { tutor: string; [key: string]: string | number } = { tutor: tutorName }
         days.forEach(day => {
           row[day] = heatmapData[`${tutorName}_${day}`] || 0
         })
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
       // Format for frontend
       const courseNames = Array.from(courseSet).sort()
       const formattedData = courseNames.map(courseName => {
-        const row: { course: string; [key: string]: number } = { course: courseName }
+        const row: { course: string; [key: string]: string | number } = { course: courseName }
         timeSlots.forEach(slot => {
           row[slot] = heatmapData[`${courseName}_${slot}`] || 0
         })

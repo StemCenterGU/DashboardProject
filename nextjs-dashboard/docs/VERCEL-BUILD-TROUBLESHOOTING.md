@@ -41,6 +41,21 @@ This project’s **tsconfig.json** includes **`"baseUrl": "."`** so that path al
 
 ---
 
+## 4. If "Module not found" still happens: Webpack build + alias
+
+This project is set up to avoid Turbopack path-resolution issues on Vercel:
+
+- **Build script** uses Webpack: `next build --webpack` (in **package.json**).
+- **next.config.mjs** sets a Webpack resolve alias: `@` → project root (the folder containing `next.config.mjs`).
+
+So the production build uses Webpack and explicitly resolves `@/lib/...` to `./lib/...` relative to the Next.js app root. If you still see "Module not found" for `@/lib/...`:
+
+1. Confirm **Root Directory** (see §1) is the folder that contains `next.config.mjs` and `lib/`.
+2. Confirm **lib/** exists on the deployed branch (see §2).
+3. Do not remove the `webpack` block from **next.config.mjs** or change the build script away from `next build --webpack` unless you fix path resolution another way.
+
+---
+
 ## Summary
 
 | Check | Action |
@@ -48,5 +63,6 @@ This project’s **tsconfig.json** includes **`"baseUrl": "."`** so that path al
 | Root Directory | Set to the folder that contains `package.json` and `lib/` (e.g. `stem-face-dashboard/nextjs-dashboard` or leave empty if repo root is the app). |
 | Branch content | Ensure `lib/` and the rest of the app are committed and pushed to the branch you deploy (e.g. **version2**). |
 | baseUrl | Keep `"baseUrl": "."` in **tsconfig.json**. |
+| Build / alias | Use `next build --webpack` and keep the `@` alias in **next.config.mjs** if path errors persist. |
 
 After fixing Root Directory and/or pushing the missing files, trigger a new deployment on Vercel.

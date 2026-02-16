@@ -27,17 +27,17 @@ export async function GET(request: NextRequest) {
     // Get summary statistics
     const summary = await analytics.getSummaryStats(filters)
     
-    // Ensure all required fields exist
+    // Ensure all required fields exist (spread first, then override with defaults)
     const summaryWithDefaults = {
-      total_appointments: summary.total_appointments || 0,
-      total_hours: summary.total_hours || 0,
-      unique_tutors: summary.unique_tutors || 0,
-      unique_courses: summary.unique_courses || 0,
-      average_duration: summary.average_duration || 0,
-      pending_confirmations: summary.pending_confirmations || 0,
-      cancelled_count: summary.cancelled_count || 0,
-      active_tutors: summary.unique_tutors || 0,
-      ...summary
+      ...summary,
+      total_appointments: summary.total_appointments ?? 0,
+      total_hours: summary.total_hours ?? 0,
+      unique_tutors: summary.unique_tutors ?? 0,
+      unique_courses: summary.unique_courses ?? 0,
+      average_duration: summary.average_duration ?? 0,
+      pending_confirmations: 0,
+      cancelled_count: 0,
+      active_tutors: summary.unique_tutors ?? 0,
     }
 
     // Get recent appointments for logs view
@@ -72,16 +72,16 @@ export async function GET(request: NextRequest) {
     // Generate alerts
     const alerts: any[] = []
     try {
-      if (summary.pending_confirmations > 10) {
+      if (summaryWithDefaults.pending_confirmations > 10) {
         alerts.push({
           type: 'warning',
           title: 'High Pending Confirmations',
-          message: `${summary.pending_confirmations} appointments are pending confirmation`
+          message: `${summaryWithDefaults.pending_confirmations} appointments are pending confirmation`
         })
       }
 
-      const total = summary.total_appointments || 0
-      const cancelled = summary.cancelled_count || 0
+      const total = summaryWithDefaults.total_appointments || 0
+      const cancelled = summaryWithDefaults.cancelled_count || 0
       if (total > 0 && (cancelled / total) > 0.2) {
         alerts.push({
           type: 'danger',
@@ -90,11 +90,11 @@ export async function GET(request: NextRequest) {
         })
       }
 
-      if (summary.unique_tutors < 3) {
+      if (summaryWithDefaults.unique_tutors < 3) {
         alerts.push({
           type: 'info',
           title: 'Low Tutor Activity',
-          message: `Only ${summary.unique_tutors} active tutors this period`
+          message: `Only ${summaryWithDefaults.unique_tutors} active tutors this period`
         })
       }
     } catch (error) {

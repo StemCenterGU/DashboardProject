@@ -31,10 +31,23 @@ interface ChartData {
     data: number[]
   }[]
   summary?: {
-    total: number
-    average: number
-    min: number
-    max: number
+    total?: number
+    average?: number
+    min?: number
+    max?: number
+    // Chart-specific summary fields
+    onlinePercent?: number
+    online?: number
+    inPerson?: number
+    inPersonPercent?: number
+    walkInPercent?: number
+    walkIn?: number
+    scheduled?: number
+    scheduledPercent?: number
+    missedPercent?: number
+    missed?: number
+    completed?: number
+    completedPercent?: number
   }
 }
 
@@ -1368,7 +1381,7 @@ export default function ChartsPage() {
               <div className="pt-4 border-t space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Total:</span>
-                  <span className="font-medium">{chartData.summary.total}</span>
+                  <span className="font-medium">{chartData.summary.total ?? '—'}</span>
                 </div>
                 {selectedChart === 'course_popularity' && courseData.length > 0 && (
                   <>
@@ -1422,15 +1435,15 @@ export default function ChartsPage() {
                   <>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Average:</span>
-                      <span className="font-medium">{chartData.summary.average.toFixed(1)}</span>
+                      <span className="font-medium">{chartData.summary.average != null ? chartData.summary.average.toFixed(1) : '—'}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Min:</span>
-                      <span className="font-medium">{chartData.summary.min}</span>
+                      <span className="font-medium">{chartData.summary.min ?? '—'}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Max:</span>
-                      <span className="font-medium">{chartData.summary.max}</span>
+                      <span className="font-medium">{chartData.summary.max ?? '—'}</span>
                     </div>
                   </>
                 )}
