@@ -20,6 +20,14 @@ Use a **subdomain** of maniar.xyz for the STEM Face Dashboard on Vercel, with DN
    - Optionally: `NEXT_PUBLIC_APP_URL` = `https://dashboard.maniar.xyz` (your chosen subdomain)
 5. Deploy. Note the default URL (e.g. `your-project.vercel.app`).
 
+### Deploy from a branch other than `main`
+
+By default Vercel uses **`main`** as the production branch. If you deploy from another branch (e.g. `version2`) and don’t push to `main`:
+
+1. In the Vercel project go to **Settings** → **Git**.
+2. Under **Production Branch**, change **main** to your branch name (e.g. **version2**).
+3. Save. From now on, pushes to that branch will trigger production deploys; you don’t need to push to `main`.
+
 ---
 
 ## 2. Add your subdomain in Vercel
