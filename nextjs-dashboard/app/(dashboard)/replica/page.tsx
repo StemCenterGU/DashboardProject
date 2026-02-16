@@ -7,8 +7,8 @@ export default async function ReplicaPage() {
   const user = await getCurrentUser()
   if (!user) redirect("/login")
 
-  const canAccess = user.role === "developer" || user.role === "admin"
-  if (!canAccess) {
+  // Latest/new features are developer-only (not admin)
+  if (user.role !== "developer") {
     redirect("/dashboard")
   }
 
@@ -20,7 +20,7 @@ export default async function ReplicaPage() {
           WCOnline Replica
         </h1>
         <p className="text-muted-foreground">
-          New features and the WCOnline replica live here. Only visible to developer (and admin) accounts.
+          New and latest features live here. Only visible when logged in with the <strong>developer</strong> role.
         </p>
       </div>
 

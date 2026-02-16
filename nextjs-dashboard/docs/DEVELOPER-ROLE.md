@@ -1,6 +1,8 @@
 # Developer Role
 
-Accounts with the **developer** role see the **Replica** link in the navbar and can access `/replica` (new changes / WCOnline replica features). Other users do not see that link or page.
+Accounts with the **developer** role see the **Replica** link in the navbar and can access `/replica` and all other **new/latest features**. Other roles (including admin) do not see or access these areas.
+
+**Policy:** From now on, all new and latest changes are gated to **developer role only** (login as developer to see and use them).
 
 ---
 
@@ -45,4 +47,13 @@ Log in with that account. You should see:
 - A **Replica** link (with a “New” badge) in the top nav.
 - Access to **/replica** for new/replica features.
 
-Admin accounts can also access `/replica`; the Replica nav link is shown only for **developer** so it’s obvious when you’re on a dev account.
+Only **developer** accounts can access `/replica` and new features; the Replica nav link is shown only when logged in as developer.
+
+---
+
+## 4. Adding new features (for developers)
+
+When adding new or experimental features:
+
+- **Gate access to developer role only:** e.g. `if (user.role !== "developer") redirect("/dashboard")` on the page, and show nav links only when `user?.role === "developer"`.
+- Do **not** grant admin or other roles access to these areas; keep “latest” features developer-only.

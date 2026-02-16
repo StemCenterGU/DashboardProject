@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { LogOut, User, Settings, Code2 } from "lucide-react"
+import { LogOut, User, Settings, Code2, Users } from "lucide-react"
 
 export function Navbar() {
   const router = useRouter()
@@ -110,6 +110,12 @@ export function Navbar() {
             <Link href="/calendar" className="text-sm font-medium text-muted-foreground hover:text-foreground">
               Calendar
             </Link>
+            {(user?.role === "admin" || user?.role === "manager") && (
+              <Link href="/users" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                Users
+              </Link>
+            )}
             {user?.role === "developer" && (
               <Link href="/replica" className="text-sm font-medium text-foreground hover:text-foreground flex items-center gap-1">
                 <Code2 className="h-4 w-4" />
