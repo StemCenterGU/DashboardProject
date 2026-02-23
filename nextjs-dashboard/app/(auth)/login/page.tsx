@@ -24,13 +24,15 @@ function LoginForm() {
     // Check if redirected from registration
     if (searchParams.get("registered") === "true") {
       setSuccess(true)
-      // Clear the query parameter
+      // Clear the query parameter (router is stable for this use; omit from deps to avoid extra runs)
       router.replace("/login", { scroll: false })
     }
-  }, [searchParams, router])
+  }, [searchParams])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    // Clear any prior registration success banner when starting a new login attempt
+    setSuccess(false)
     setLoading(true)
     setError("")
 

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const { data: appointments, error } = await supabase
       .from("appointments")
-      .select("appointment_id, appointment_date, start_time, end_time, student_name, tutor_name, course_name, status")
+      .select("appointment_id, appointment_date, start_time, end_time, student_name, tutor_name, course_name, status, is_online, is_walk_in, is_missed")
       .gte("appointment_date", startDate)
       .lte("appointment_date", endDate)
       .order("appointment_date", { ascending: true })

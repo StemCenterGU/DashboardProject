@@ -42,6 +42,14 @@ export default function CalendarPage() {
     setCurrentDate(new Date())
   }
 
+  // Helper to format a Date as local YYYY-MM-DD (avoids UTC timezone shifts)
+  const formatLocalDate = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   // Fetch appointments for the current month
   useEffect(() => {
     fetchAppointmentsForMonth()
@@ -52,8 +60,9 @@ export default function CalendarPage() {
     try {
       const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
       const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
-      const startDate = firstDay.toISOString().split('T')[0]
-      const endDate = lastDay.toISOString().split('T')[0]
+      // Use local-date strings so they match how appointment_date is stored
+      const startDate = formatLocalDate(firstDay)
+      const endDate = formatLocalDate(lastDay)
 
       const response = await fetch(
         `/api/scheduling/appointments-by-range?start_date=${startDate}&end_date=${endDate}`
