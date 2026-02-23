@@ -4,11 +4,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Calendar, Clock, Users, BookOpen, Plus, Search, Loader2 } from "lucide-react"
-import { useState, useEffect } from "react"
-import { ScheduleGrid } from "@/components/schedule-grid"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Calendar, Clock, Users, BookOpen, Plus, Search, Loader2, ChevronDown } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, parseISO } from "date-fns"
+import { WeekAsDayGrids } from "@/components/week-as-day-grids"
 import { TodayAppointments, UpcomingAppointments } from "@/components/scheduling"
-import { LoadingSpinner } from "@/components/shared"
 
 interface Appointment {
   appointment_id: string
@@ -34,6 +40,12 @@ interface Availability {
   end_time: string
 }
 
+interface Course {
+  course_id: string
+  course_code: string | null
+  course_name: string
+}
+
 export default function SchedulingPage() {
   const [activeTab, setActiveTab] = useState("schedule")
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([])
@@ -47,6 +59,18 @@ export default function SchedulingPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const itemsPerPage = 10
+
+  // Schedule grid tab: selected date and WCOnline-style filters
+  const [selectedScheduleDate, setSelectedScheduleDate] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  })
+  const [scheduleTutors, setScheduleTutors] = useState<Tutor[]>([])
+  const [scheduleCourses, setScheduleCourses] = useState<Course[]>([])
+  const [staffFilter, setStaffFilter] = useState<string>("all")
+  const [courseFilter, setCourseFilter] = useState<string>("all")
+  const [meetingTypeFilter, setMeetingTypeFilter] = useState<string>("all")
+  const scheduleDateInputRef = useRef<HTMLInputElement>(null)
 
   // Get today's date in local timezone (YYYY-MM-DD format)
   const getLocalDate = (date: Date) => {
@@ -74,6 +98,20 @@ export default function SchedulingPage() {
     } else if (activeTab === "availability") {
       fetchAvailability()
       fetchTutors()
+    } else if (activeTab === "schedule") {
+      // Fetch tutors and courses for schedule grid
+      Promise.all([
+        fetch("/api/scheduling/tutors").then((res) => res.ok ? res.json() : { tutors: [] }),
+        fetch("/api/scheduling/schedule-week").then((res) => res.ok ? res.json() : { courses: [] })
+      ])
+        .then(([tutorsData, weekData]) => {
+          setScheduleTutors(tutorsData.tutors ?? [])
+          setScheduleCourses(weekData.courses ?? [])
+        })
+        .catch(() => {
+          setScheduleTutors([])
+          setScheduleCourses([])
+        })
     }
   }, [activeTab, currentPage])
 
@@ -153,6 +191,16 @@ export default function SchedulingPage() {
     return days[dayOfWeek]
   }
 
+  // Week range and nav for schedule grid (WCOnline-style)
+  const scheduleDate = parseISO(selectedScheduleDate)
+  const weekStart = startOfWeek(scheduleDate, { weekStartsOn: 0 })
+  const weekEnd = endOfWeek(scheduleDate, { weekStartsOn: 0 })
+  const weekRangeLabel = `${format(weekStart, "MMMM d")} - ${format(weekEnd, "MMMM d, yyyy")}`
+  const weekStartStr = format(weekStart, "yyyy-MM-dd")
+  const goPrevWeek = () => setSelectedScheduleDate(format(subWeeks(weekStart, 1), "yyyy-MM-dd"))
+  const goNextWeek = () => setSelectedScheduleDate(format(addWeeks(weekStart, 1), "yyyy-MM-dd"))
+  const goCurrentWeek = () => setSelectedScheduleDate(today)
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -194,9 +242,146 @@ export default function SchedulingPage() {
         </Button>
       </div>
 
-      {/* Schedule Grid View */}
+      {/* Schedule Grid View - WCOnline-style: title, week nav, instructions, display options, then grid */}
       {activeTab === "schedule" && (
-        <ScheduleGrid />
+        <div className="space-y-6">
+          {/* Title and week navigation - WCOnline style */}
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-[#1e3a5f]">STEM Center</h2>
+              <p className="text-muted-foreground mt-1">{weekRangeLabel}</p>
+              <div className="flex items-center gap-1 mt-2 flex-wrap">
+                <Button variant="link" className="p-0 h-auto text-blue-600 underline" onClick={goPrevWeek}>
+                  Previous Week
+                </Button>
+                <span className="text-muted-foreground">|</span>
+                <Button variant="link" className="p-0 h-auto text-blue-600 underline" onClick={goCurrentWeek}>
+                  Current Week
+                </Button>
+                <span className="text-muted-foreground">|</span>
+                <Button variant="link" className="p-0 h-auto text-blue-600 underline" onClick={goNextWeek}>
+                  Next Week
+                </Button>
+                <input
+                  ref={scheduleDateInputRef}
+                  type="date"
+                  className="sr-only"
+                  value={selectedScheduleDate}
+                  onChange={(e) => setSelectedScheduleDate(e.target.value)}
+                  aria-label="Pick date"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="ml-1"
+                  onClick={() => {
+                    const el = scheduleDateInputRef.current
+                    if (el) {
+                      if (typeof (el as HTMLInputElement).showPicker === "function") (el as HTMLInputElement).showPicker()
+                      else el.click()
+                    }
+                  }}
+                  type="button"
+                >
+                  <Calendar className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <Button variant="default" className="bg-blue-600 hover:bg-blue-700 text-white shrink-0">
+              Area Tools
+              <ChevronDown className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Instructions box - light grey, blue text */}
+          <Card className="border-gray-200 bg-gray-100/80 rounded-lg">
+            <CardContent className="pt-4 pb-4 text-sm text-blue-800 space-y-2">
+              <p>
+                Use the &quot;Course or Focus&quot; drop-down menu to filter by tutors who will be able to work with the course you need help with!
+              </p>
+              <p>
+                Click on the start time block for a tutor who can assist you with the course you have chosen.
+              </p>
+              <p>
+                Then, complete the appointment registration form pop-up; we encourage you to choose a 60-minute appointment by adjusting the end time, near the top.
+              </p>
+              <p>
+                Email stemcenter@gannon.edu for any further assistance!
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Display Options */}
+          <div className="w-full space-y-2">
+            <h3 className="text-sm font-semibold">Display Options</h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="flex min-w-0 flex-col gap-1">
+                <label className="text-xs text-muted-foreground">Staff &amp; Resources</label>
+                <select
+                  value={staffFilter}
+                  onChange={(e) => setStaffFilter(e.target.value)}
+                  className="w-full border rounded-md px-3 py-2 bg-background text-foreground"
+                >
+                  <option value="all">Show All Staff &amp; Resources</option>
+                  {scheduleTutors.map((t) => (
+                    <option key={t.tutor_id} value={t.tutor_id}>{t.tutor_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex min-w-0 flex-col gap-1">
+                <label className="text-xs text-muted-foreground">Course or Focus</label>
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex h-10 w-full min-w-0 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 [&>span]:truncate"
+                    >
+                      <span className="truncate">
+                        {courseFilter === "all"
+                          ? "Show All \"Course or Focus\" Options"
+                          : (() => {
+                              const c = scheduleCourses.find((x) => x.course_id === courseFilter)
+                              return c ? (c.course_code ? `${c.course_code}: ` : "") + c.course_name : "Show All \"Course or Focus\" Options"
+                            })()}
+                      </span>
+                      <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="max-h-[min(24rem,var(--radix-dropdown-menu-content-available-height))] min-w-[var(--radix-dropdown-menu-trigger-width)]">
+                    <DropdownMenuItem onClick={() => setCourseFilter("all")}>
+                      Show All &quot;Course or Focus&quot; Options
+                    </DropdownMenuItem>
+                    {scheduleCourses.map((c) => (
+                      <DropdownMenuItem
+                        key={c.course_id}
+                        onClick={() => setCourseFilter(c.course_id)}
+                      >
+                        {c.course_code ? `${c.course_code}: ` : ""}{c.course_name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="flex min-w-0 flex-col gap-1">
+                <label className="text-xs text-muted-foreground">Meeting Types</label>
+                <select
+                  value={meetingTypeFilter}
+                  onChange={(e) => setMeetingTypeFilter(e.target.value)}
+                  className="w-full border rounded-md px-3 py-2 bg-background text-foreground"
+                >
+                  <option value="all">Show All Meeting Types</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* All 7 days in previous single-day style: one table per day, same layout (date + time across top, tutors as rows), scrollable */}
+          <WeekAsDayGrids
+            weekStart={weekStartStr}
+            staffFilter={staffFilter}
+            courseFilter={courseFilter}
+          />
+        </div>
       )}
 
       {/* Appointments View */}
@@ -310,52 +495,6 @@ export default function SchedulingPage() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Scheduling Features</CardTitle>
-          <CardDescription>Available scheduling capabilities</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <div className="p-4 border rounded-lg">
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Appointment Booking
-              </h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Book new appointments</li>
-                <li>• Cancel appointments</li>
-                <li>• Reschedule appointments</li>
-                <li>• View appointment history</li>
-              </ul>
-            </div>
-            <div className="p-4 border rounded-lg">
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Tutor Management
-              </h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• View tutor schedules</li>
-                <li>• Manage tutor availability</li>
-                <li>• Assign courses to tutors</li>
-                <li>• Track tutor workload</li>
-              </ul>
-            </div>
-            <div className="p-4 border rounded-lg">
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Schedule Grid
-              </h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Weekly schedule view</li>
-                <li>• Time slot management</li>
-                <li>• Availability checking</li>
-                <li>• Conflict detection</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

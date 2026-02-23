@@ -1,0 +1,705 @@
+# Courses with Instructors
+
+List of course/focus options used in the scheduling dashboard (Course or Focus dropdown).  
+Each line is a course name with instructor(s), e.g. "ACCT305 … - Dr Renee Castrigano Only" or "… - any instructors Only".
+
+---
+
+- ACCT305 Intermediate Fin Accounting I - Dr Renee Castrigano Only
+- ACCT305 Intermediate Fin Accounting I - any instructors Only
+- ACCT313 Accounting Information Systems - Mr Blase Nicolia Only
+- ACCT313 Accounting Information Systems - any instructors Only
+- ACCT315 Intermediate Fin Accounting II - Dr Renee Castrigano Only
+- ACCT315 Intermediate Fin Accounting II - any instructors Only
+- ACCT320 Cost Management - Mr Blase Nicolia Only
+- ACCT320 Cost Management - any instructors Only
+- ACCT415 Adv Financial Acct - Dr Renee Castrigano Only
+- ACCT415 Adv Financial Acct - any instructors Only
+- ACCT440 Financial Auditing - Mr Blase Nicolia Only
+- ACCT440 Financial Auditing - any instructors Only
+- Academic AdviceMentoring Not Major-Dependent Only
+- BCOR105 Found of Busn Enterprise - Dr Eric Brownlee Only
+- BCOR105 Found of Busn Enterprise - Dr Jinhee Yoo Only
+- BCOR105 Found of Busn Enterprise - Dr Michael Messina Only
+- BCOR105 Found of Busn Enterprise - Dr William McAndrew Only
+- BCOR105 Found of Busn Enterprise - Mr Bruce Kibler Only
+- BCOR105 Found of Busn Enterprise - any instructors Only
+- BCOR111 Prin Microecomonics - Dr M Roth Only
+- BCOR111 Prin Microecomonics - Dr Philip Szmedra Only
+- BCOR111 Prin Microecomonics - any instructors Only
+- BCOR112 Prin Macroeconomics - Dr Philip Szmedra Only
+- BCOR112 Prin Macroeconomics - Dr William McAndrew Only
+- BCOR112 Prin Macroeconomics - Mr John Stone Only
+- BCOR112 Prin Macroeconomics - any instructors Only
+- BCOR214 Prin of Accounting I - Dr Joseph Kuvshinikov Only
+- BCOR214 Prin of Accounting I - Dr Renee Castrigano Only
+- BCOR214 Prin of Accounting I - Mr Blase Nicolia Only
+- BCOR214 Prin of Accounting I - Mr Terry Holmes Only
+- BCOR214 Prin of Accounting I - any instructors Only
+- BCOR215 Prin of Accounting II - Dr Renee Castrigano Only
+- BCOR215 Prin of Accounting II - Mr Blase Nicolia Only
+- BCOR215 Prin of Accounting II - Mr Terry Holmes Only
+- BCOR215 Prin of Accounting II - any instructors Only
+- BCOR220 Intro to Statistical Analysis - Dr Celene Kalivoda Only
+- BCOR220 Intro to Statistical Analysis - Dr Keith Holler Only
+- BCOR220 Intro to Statistical Analysis - Dr Xiangjing Wei Only
+- BCOR220 Intro to Statistical Analysis - any instructors Only
+- BCOR240 Marketing in Global Env - Dr Michael Messina Only
+- BCOR240 Marketing in Global Env - any instructors Only
+- BCOR241 Prin of Marketing - Dr Michael Messina Only
+- BCOR241 Prin of Marketing - any instructors Only
+- BCOR250 Mgmt Theory and Practice - Dr Earl Brieger Only
+- BCOR250 Mgmt Theory and Practice - Dr Eric Brownlee Only
+- BCOR250 Mgmt Theory and Practice - Dr Joseph Kuvshinikov Only
+- BCOR250 Mgmt Theory and Practice - Mr Kurt Hersch Only
+- BCOR250 Mgmt Theory and Practice - Mr Thomas Comstock Only
+- BCOR250 Mgmt Theory and Practice - any instructors Only
+- BCOR303 Legal Env of Business - Mr Terry Holmes Only
+- BCOR303 Legal Env of Business - any instructors Only
+- BCOR311 Financial Mgt 1 - Dr Lei Wang Only
+- BCOR311 Financial Mgt 1 - any instructors Only
+- BCOR311 Financial Mgt 1 Financial Mgt 1 - Dr Lei Wang Only
+- BCOR311 Financial Mgt 1 Financial Mgt 1 - Mr John Stone Only
+- BCOR311 Financial Mgt 1 Financial Mgt 1 - any instructors Only
+- BCOR440 Operations  Supply Chain Mgmt - Dr Celene Kalivoda Only
+- BCOR440 Operations  Supply Chain Mgmt - Ms Benyawarath Nithithanatchinnapat Only
+- BCOR440 Operations  Supply Chain Mgmt - any instructors Only
+- BIOL103 Environmental Issues - Dr Steven Ropski Only
+- BIOL103 Environmental Issues - Ms Michelle Kuns Only
+- BIOL103 Environmental Issues - any instructors Only
+- BIOL104 Human Biology - Dr Mary Vagula Only
+- BIOL104 Human Biology - any instructors Only
+- BIOL106 Intro Microbiology - any instructors Only
+- BIOL106 Intro Microbiology Intro Microbiology - Dr Matthew Gacura Only
+- BIOL106 Intro Microbiology Intro Microbiology - any instructors Only
+- BIOL107 Intro Microbiol Lab Intro Microbiol Lab - Dr Matthew Gacura Only
+- BIOL107 Intro Microbiol Lab Intro Microbiol Lab - any instructors Only
+- BIOL115 Hum Anatomy  Phys 1 - Mrs Renee Foradori Only
+- BIOL115 Hum Anatomy  Phys 1 - any instructors Only
+- BIOL116 Hum AnatPhys Lab 1 - Mrs Renee Foradori Only
+- BIOL116 Hum AnatPhys Lab 1 - any instructors Only
+- BIOL117 Hum Anatomy  Phys 2 - Dr Prasad Dalvi Only
+- BIOL117 Hum Anatomy  Phys 2 - Mrs Renee Foradori Only
+- BIOL117 Hum Anatomy  Phys 2 - any instructors Only
+- BIOL118 Hum AnatPhys Lab 2 - Mrs Melanie Gustafson-Ropski Only
+- BIOL118 Hum AnatPhys Lab 2 - Mrs Renee Foradori Only
+- BIOL118 Hum AnatPhys Lab 2 - any instructors Only
+- BIOL122 MolCellular Biology - Dr Gregory Andraso Only
+- BIOL122 MolCellular Biology - Dr He Liu Only
+- BIOL122 MolCellular Biology - Dr Michael Ganger Only
+- BIOL122 MolCellular Biology - Dr Quyen Aoh Only
+- BIOL122 MolCellular Biology - any instructors Only
+- BIOL123 MolCell Biology Lab - Mr Christopher Johns Only
+- BIOL123 MolCell Biology Lab - Ms Michelle Kuns Only
+- BIOL123 MolCell Biology Lab - any instructors Only
+- BIOL124 Animal FormFunction - Dr Elisa Konieczko Only
+- BIOL124 Animal FormFunction - Dr Gregory Andraso Only
+- BIOL124 Animal FormFunction - Dr Michael Ganger Only
+- BIOL124 Animal FormFunction - Dr Quyen Aoh Only
+- BIOL124 Animal FormFunction - Dr Steven Ropski Only
+- BIOL124 Animal FormFunction - any instructors Only
+- BIOL125 Animal FormFunc Lab - Dr Tia Young Only
+- BIOL125 Animal FormFunc Lab - Mrs Melanie Gustafson-Ropski Only
+- BIOL125 Animal FormFunc Lab - Ms Michelle Kuns Only
+- BIOL125 Animal FormFunc Lab - any instructors Only
+- BIOL126 Ecosystem Bio  Evol - Dr Elizabeth George Only
+- BIOL126 Ecosystem Bio  Evol - Dr Michael Ganger Only
+- BIOL126 Ecosystem Bio  Evol - Dr Steven Ropski Only
+- BIOL126 Ecosystem Bio  Evol - any instructors Only
+- BIOL127 Ecosystem Biol  Evol Lab - Dr Elizabeth George Only
+- BIOL127 Ecosystem Biol  Evol Lab - Dr Michael Ganger Only
+- BIOL127 Ecosystem Biol  Evol Lab - Dr Steven Ropski Only
+- BIOL127 Ecosystem Biol  Evol Lab - any instructors Only
+- BIOL140 Intro Aquatic Science - Ms Michelle Kuns Only
+- BIOL140 Intro Aquatic Science - any instructors Only
+- BIOL220 Botany - Dr Michael Ganger Only
+- BIOL220 Botany - any instructors Only
+- BIOL232 Human Genetics - Dr Russell Minton Only
+- BIOL265 Genetics - Dr Quyen Aoh Only
+- BIOL265 Genetics - any instructors Only
+- BIOL266 Genetics Lab - Dr Quyen Aoh Only
+- BIOL266 Genetics Lab - any instructors Only
+- BIOL298 Prin of Ecology - Dr Michael Ganger Only
+- BIOL298 Prin of Ecology - any instructors Only
+- BIOL299 Princpl Ecology Lab - Dr Michael Ganger Only
+- BIOL299 Princpl Ecology Lab - any instructors Only
+- BIOL302 Animal Behavior Animal Behavior - Dr Gregory Andraso Only
+- BIOL302 Animal Behavior Animal Behavior - any instructors Only
+- BIOL306 Oceanography - Dr Christopher Dempsey Only
+- BIOL306 Oceanography - any instructors Only
+- BIOL325 Vertebrate Zoology Vertebrate Zoology - Dr Steven Ropski Only
+- BIOL325 Vertebrate Zoology Vertebrate Zoology - any instructors Only
+- BIOL326 Vertebrate Zoo Lab Vertebrate Zoo Lab - Dr Steven Ropski Only
+- BIOL326 Vertebrate Zoo Lab Vertebrate Zoo Lab - any instructors Only
+- BIOL331 Microbiology - Dr Matthew Gacura Only
+- BIOL331 Microbiology - any instructors Only
+- BIOL332 Microbiology Lab - Dr Matthew Gacura Only
+- BIOL332 Microbiology Lab - any instructors Only
+- BIOL340 Aquatic Microbiology - Dr Matthew Gacura Only
+- BIOL340 Aquatic Microbiology - any instructors Only
+- BIOL341 Aquatic Micro Lab Aquatic Micro Lab - Dr Matthew Gacura Only
+- BIOL341 Aquatic Micro Lab Aquatic Micro Lab - any instructors Only
+- BIOL365 Human Gross Anatomy - Dr Prasad Dalvi Only
+- BIOL365 Human Gross Anatomy - any instructors Only
+- BIOL366 Human Gross Anat Lab - Dr Prasad Dalvi Only
+- BIOL366 Human Gross Anat Lab - any instructors Only
+- BIOL368 Human Physiology - Dr He Liu Only
+- BIOL368 Human Physiology - Dr Mary Vagula Only
+- BIOL368 Human Physiology - any instructors Only
+- BIOL369 Human Physio Lab - Dr He Liu Only
+- BIOL369 Human Physio Lab - Dr Mary Vagula Only
+- BIOL369 Human Physio Lab - any instructors Only
+- BIOL378 Medical Microbiology - Dr Gary Vanderlaan Only
+- BIOL378 Medical Microbiology - any instructors Only
+- BIOL379 Med Micro Lab - Dr Gary Vanderlaan Only
+- BIOL379 Med Micro Lab - any instructors Only
+- BIOL383 Tropical Marine Biol - Dr Christopher Dempsey Only
+- BIOL383 Tropical Marine Biol - Ms Michelle Kuns Only
+- BIOL383 Tropical Marine Biol - any instructors Only
+- BIOL384 Ecolgy Yellwstn Park - Dr Steven Ropski Only
+- BIOL384 Ecolgy Yellwstn Park - any instructors Only
+- BIOL385 Limnology - Dr Christopher Dempsey Only
+- BIOL385 Limnology - any instructors Only
+- BIOL386 Limnology Lab - Dr Christopher Dempsey Only
+- BIOL386 Limnology Lab - any instructors Only
+- BIOL395 Fisheries Biology - Dr Gregory Andraso Only
+- BIOL395 Fisheries Biology - any instructors Only
+- BIOL396 Fisheries Biology Lab - Dr Gregory Andraso Only
+- BIOL396 Fisheries Biology Lab - any instructors Only
+- BIOL487 Directed Research - Dr He Liu Only
+- BIOL487 Directed Research - Dr Matthew Gacura Only
+- BIOL487 Directed Research - Dr Steven Ropski Only
+- BIOL487 Directed Research - any instructors Only
+- BIOL492 Spec Topics in Biol - Mrs Melanie Gustafson-Ropski Only
+- BIOL492 Spec Topics in Biol - any instructors Only
+- BIOL493 Spec Topics in Biol - Dr Steven Ropski Only
+- BIOL493 Spec Topics in Biol - any instructors Only
+- BME307 Bioengineering Research Meth - Dr Xiaoxu Ji Only
+- BME307 Bioengineering Research Meth - any instructors Only
+- BME308 Rsch Proj Clin Biomechanics - Dr Xiaoxu Ji Only
+- BME308 Rsch Proj Clin Biomechanics - any instructors Only
+- BME310 Biomaterials - Dr Longyan Chen Only
+- BME310 Biomaterials - any instructors Only
+- BME467 Biofluid Mechanics - Dr Longyan Chen Only
+- BME467 Biofluid Mechanics - any instructors Only
+- CHEM102 Intro Org  Bio Chem - any instructors Only
+- CHEM103 Chemistry of Life 1 - Dr Betty Jo Chitester Only
+- CHEM103 Chemistry of Life 1 - Kevin Burridge Only
+- CHEM103 Chemistry of Life 1 - any instructors Only
+- CHEM104 Chem of Life Lab 1 - Kevin Burridge Only
+- CHEM104 Chem of Life Lab 1 - Mr Shawn Feiock Only
+- CHEM104 Chem of Life Lab 1 - any instructors Only
+- CHEM105 Physiological Chem - Dr Aaron Forbes Only
+- CHEM105 Physiological Chem - Kellie Jircitano Only
+- CHEM105 Physiological Chem - Kevin Burridge Only
+- CHEM105 Physiological Chem - any instructors Only
+- CHEM106 Chemistry of Life 2 - Dr Betty Jo Chitester Only
+- CHEM106 Chemistry of Life 2 - any instructors Only
+- CHEM107 Chem of Life Lab 2 - Kellie Jircitano Only
+- CHEM107 Chem of Life Lab 2 - Mr Shawn Feiock Only
+- CHEM107 Chem of Life Lab 2 - any instructors Only
+- CHEM108 Physiologicl Chem Lab - Dr Aaron Forbes Only
+- CHEM108 Physiologicl Chem Lab - any instructors Only
+- CHEM111 General Chemistry 1 - Dr Matthew Heerboth Only
+- CHEM111 General Chemistry 1 - Dr Weslene Tallmadge Only
+- CHEM111 General Chemistry 1 - Ms Natalie Stano Only
+- CHEM111 General Chemistry 1 - any instructors Only
+- CHEM111 General Chemistry 1 General Chemistry 1 - Dr Keith Krise Only
+- CHEM111 General Chemistry 1 General Chemistry 1 - Dr Matthew Heerboth Only
+- CHEM111 General Chemistry 1 General Chemistry 1 - Dr Weslene Tallmadge Only
+- CHEM111 General Chemistry 1 General Chemistry 1 - Ms Natalie Stano Only
+- CHEM111 General Chemistry 1 General Chemistry 1 - any instructors Only
+- CHEM112 General Chem Lab 1 - Dr Keith Krise Only
+- CHEM112 General Chem Lab 1 - Dr Matthew Heerboth Only
+- CHEM112 General Chem Lab 1 - Kellie Jircitano Only
+- CHEM112 General Chem Lab 1 - Mrs Cynthia Willis Only
+- CHEM112 General Chem Lab 1 - Ms Mary Mullen Only
+- CHEM112 General Chem Lab 1 - Ms Natalie Stano Only
+- CHEM112 General Chem Lab 1 - any instructors Only
+- CHEM112 General Chem Lab 1 General Chem Lab 1 - Dr Keith Krise Only
+- CHEM112 General Chem Lab 1 General Chem Lab 1 - Dr Matthew Heerboth Only
+- CHEM112 General Chem Lab 1 General Chem Lab 1 - Jerry Phelps Only
+- CHEM112 General Chem Lab 1 General Chem Lab 1 - any instructors Only
+- CHEM114 General Chemistry 2 - Dr Matthew Heerboth Only
+- CHEM114 General Chemistry 2 - Dr Weslene Tallmadge Only
+- CHEM114 General Chemistry 2 - Ms Natalie Stano Only
+- CHEM114 General Chemistry 2 - any instructors Only
+- CHEM114 General Chemistry 2 General Chemistry 2 - Dr Matthew Heerboth Only
+- CHEM114 General Chemistry 2 General Chemistry 2 - Ms Natalie Stano Only
+- CHEM114 General Chemistry 2 General Chemistry 2 - any instructors Only
+- CHEM115 General Chem Lab 2 - Dr Keith Krise Only
+- CHEM115 General Chem Lab 2 - Kellie Jircitano Only
+- CHEM115 General Chem Lab 2 - Mrs Cynthia Willis Only
+- CHEM115 General Chem Lab 2 - Ms Natalie Stano Only
+- CHEM115 General Chem Lab 2 - Staff Only
+- CHEM115 General Chem Lab 2 - any instructors Only
+- CHEM115 General Chem Lab 2 General Chem Lab 2 - Kellie Jircitano Only
+- CHEM115 General Chem Lab 2 General Chem Lab 2 - Ms Madison Harrier Only
+- CHEM115 General Chem Lab 2 General Chem Lab 2 - any instructors Only
+- CHEM221 Organic Chem 1 - Dr Christine Saber Only
+- CHEM221 Organic Chem 1 - Dr Ria Betush Only
+- CHEM221 Organic Chem 1 - any instructors Only
+- CHEM221 Organic Chem 1 Organic Chem 1 - Dr Christine Saber Only
+- CHEM221 Organic Chem 1 Organic Chem 1 - Dr Ria Betush Only
+- CHEM221 Organic Chem 1 Organic Chem 1 - any instructors Only
+- CHEM222 Organic Chem Lab 1 - Dr Christine Saber Only
+- CHEM222 Organic Chem Lab 1 - Dr Keith Krise Only
+- CHEM222 Organic Chem Lab 1 - Dr Ria Betush Only
+- CHEM222 Organic Chem Lab 1 - Ms Natalie Stano Only
+- CHEM222 Organic Chem Lab 1 - any instructors Only
+- CHEM222 Organic Chem Lab 1 Organic Chem Lab 1 - Dr Christine Saber Only
+- CHEM222 Organic Chem Lab 1 Organic Chem Lab 1 - Ms Natalie Stano Only
+- CHEM222 Organic Chem Lab 1 Organic Chem Lab 1 - any instructors Only
+- CHEM224 Organic Chem 2 - Dr Christine Saber Only
+- CHEM224 Organic Chem 2 - Dr Ria Betush Only
+- CHEM224 Organic Chem 2 - any instructors Only
+- CHEM224 Organic Chem 2 Organic Chem 2 - Dr Christine Saber Only
+- CHEM224 Organic Chem 2 Organic Chem 2 - Dr Ria Betush Only
+- CHEM224 Organic Chem 2 Organic Chem 2 - any instructors Only
+- CHEM225 Organic Chem Lab 2 - Dr Christine Saber Only
+- CHEM225 Organic Chem Lab 2 - Dr Ria Betush Only
+- CHEM225 Organic Chem Lab 2 - any instructors Only
+- CHEM225 Organic Chem Lab 2 Organic Chem Lab 2 - Dr Aaron Forbes Only
+- CHEM225 Organic Chem Lab 2 Organic Chem Lab 2 - Dr Ria Betush Only
+- CHEM225 Organic Chem Lab 2 Organic Chem Lab 2 - any instructors Only
+- CHEM325 Organic Spectroscop Mthds - Dr Christine Saber Only
+- CHEM325 Organic Spectroscop Mthds - any instructors Only
+- CHEM326 Organic Spectroscopic Methods Lab - Dr Christine Saber Only
+- CHEM326 Organic Spectroscopic Methods Lab - any instructors Only
+- CHEM331 Physical Chemistry 1 - Dr Lisa Nogaj Only
+- CHEM331 Physical Chemistry 1 - any instructors Only
+- CHEM332 Physical Chem Lab 1 - Dr Keith Krise Only
+- CHEM332 Physical Chem Lab 1 - any instructors Only
+- CHEM332 Physical Chem Lab 1 Physical Chem Lab 1 - Dr Keith Krise Only
+- CHEM332 Physical Chem Lab 1 Physical Chem Lab 1 - any instructors Only
+- CHEM336 Modern Analyt Chem - Dr Weslene Tallmadge Only
+- CHEM336 Modern Analyt Chem - any instructors Only
+- CHEM366 Structural Biochem - Dr Betty Jo Chitester Only
+- CHEM366 Structural Biochem - any instructors Only
+- CHEM366 Structural Biochem Structural Biochem - Dr Betty Jo Chitester Only
+- CHEM366 Structural Biochem Structural Biochem - any instructors Only
+- CHEM367 Biochemical Lab - Ms Natalie Stano Only
+- CHEM381 Undergrad Research Undergrad Research - Dr Betty Jo Chitester Only
+- CHEM381 Undergrad Research Undergrad Research - any instructors Only
+- CIS150 Business Technology 1 - Mr David Marino Only
+- CIS150 Business Technology 1 - Mr Joseph Kwashnak Only
+- CIS150 Business Technology 1 - Mr Michael Beiter Only
+- CIS150 Business Technology 1 - any instructors Only
+- CIS180 Prob Solv  Comp Prog - Mr Mark Blair Only
+- CIS180 Prob Solv  Comp Prog - Mr Rashid Khan Only
+- CIS180 Prob Solv  Comp Prog - Ms Marwah Obaid Only
+- CIS180 Prob Solv  Comp Prog - any instructors Only
+- CIS181 Prob SolvComPg Lab - Mr Mark Blair Only
+- CIS181 Prob SolvComPg Lab - Mr Rashid Khan Only
+- CIS181 Prob SolvComPg Lab - Ms Marwah Obaid Only
+- CIS181 Prob SolvComPg Lab - any instructors Only
+- CIS182 Object Orient Prog - Dr Hector Perez-Gonzalez Only
+- CIS182 Object Orient Prog - any instructors Only
+- CIS183 Object Orient Prog Lab - Dr Hector Perez-Gonzalez Only
+- CIS183 Object Orient Prog Lab - Dr Sheheeda Mariam Manakkadu Only
+- CIS183 Object Orient Prog Lab - any instructors Only
+- CIS219 Linux Programming - Dr Richard Matovu Only
+- CIS219 Linux Programming - Dr Ronny Bazan-Antequera Only
+- CIS219 Linux Programming - any instructors Only
+- CIS239 The User Experience - Mr Brian Camodeca Only
+- CIS239 The User Experience - any instructors Only
+- CIS240 Web Management  Design - Mr Uzoma Onwumelu Only
+- CIS252 Advanced Excel - Joshua Maurer Only
+- CIS252 Advanced Excel - Mrs Temidayo Osatuyi Only
+- CIS252 Advanced Excel - Ms Benyawarath Nithithanatchinnapat Only
+- CIS252 Advanced Excel - any instructors Only
+- CIS255 Database Management and Administration - Dr Kefei Wang Only
+- CIS255 Database Management and Administration - any instructors Only
+- CIS277 Mobile Appl Devlp 1 - Mr Jizhou Tong Only
+- CIS277 Mobile Appl Devlp 1 - any instructors Only
+- CIS287 Obj-Orient Dsgn Lab - Dr Hector Perez-Gonzalez Only
+- CIS326 Frml Meth Sftw Dev - Mr Jizhou Tong Only
+- CIS326 Frml Meth Sftw Dev - any instructors Only
+- CIS350 Rqmts  Project Mgmt - Ms Marwah Obaid Only
+- CIS350 Rqmts  Project Mgmt - any instructors Only
+- CIS355 Web Programming and Implementation - Mr Jeremy Cannell Only
+- CIS355 Web Programming and Implementation - any instructors Only
+- CIS387 System  Network Secur - Dr Ronny Bazan-Antequera Only
+- CIS387 System  Network Secur - any instructors Only
+- CIS457 Senior Design 1 - Dr Mei-Huei Tang Only
+- CIS457 Senior Design 1 - any instructors Only
+- DIET202 Nutrition - Mrs Sally Klinner Only
+- DIET202 Nutrition - Ms Sandra Luthringer Only
+- DIET202 Nutrition - any instructors Only
+- DIET202 Nutrition Nutrition - Ms Sandra Luthringer Only
+- DIET202 Nutrition Nutrition - any instructors Only
+- ECE105 Engineer Tools Appl - Ms Xin Gao Only
+- ECE105 Engineer Tools Appl - any instructors Only
+- ECE106 Engineer Tools Appl Lab - Ms Xin Gao Only
+- ECE106 Engineer Tools Appl Lab - any instructors Only
+- ECE231 Intro Elec Engr - Ms Xin Gao Only
+- ECE231 Intro Elec Engr - any instructors Only
+- ECE232 Intro Elec Engr Lab - Mr Robert Rodgers Only
+- ECE232 Intro Elec Engr Lab - any instructors Only
+- ECE337 Computer Architectur - Dr Yong-Kyu Jung Only
+- ECON441 International Econ - Dr William McAndrew Only
+- ECON441 International Econ - any instructors Only
+- ENG102 Intro to Engineering  Computing - Dr Ikechukwu Ohu Only
+- ENG102 Intro to Engineering  Computing - Dr Lin Zhao Only
+- ENG102 Intro to Engineering  Computing - Dr Longfei Zhou Only
+- ENG102 Intro to Engineering  Computing - Dr Longyan Chen Only
+- ENG102 Intro to Engineering  Computing - Dr Varun Kasaraneni Only
+- ENG102 Intro to Engineering  Computing - Staff Only
+- ENG102 Intro to Engineering  Computing - any instructors Only
+- ENG380 Professional Seminar - Dr Ikechukwu Ohu Only
+- ENV101 Physical Geology - Dr David Hoch Only
+- ENV101 Physical Geology - any instructors Only
+- ENV102 Physical Geo Lab - Dr David Hoch Only
+- ENV102 Physical Geo Lab - any instructors Only
+- ENV120 Principles Env Sci - Dr Liu Cao Only
+- ENV120 Principles Env Sci - Staff Only
+- ENV120 Principles Env Sci - any instructors Only
+- ENV121 Princ EnerClimate Chg - Dr Michelle Homan Only
+- ENV121 Princ EnerClimate Chg - any instructors Only
+- ENV307 Soil Science - Dr Liu Cao Only
+- ENV307 Soil Science - any instructors Only
+- ENV383 Envionmentl Research - Dr Liu Cao Only
+- ENV383 Envionmentl Research - any instructors Only
+- ENV400 Environ Toxicology - Dr Liu Cao Only
+- ENV400 Environ Toxicology - any instructors Only
+- ENV401 Env Hlth  Tox Lab - Dr Liu Cao Only
+- ENV401 Env Hlth  Tox Lab - any instructors Only
+- ENV422 Wetlands Sci  Eng - Mr Joseph Hudson Only
+- ENV422 Wetlands Sci  Eng - any instructors Only
+- ENV496 Senior Thesis 1 - Dr Hwidong Kim Only
+- ENV496 Senior Thesis 1 - any instructors Only
+- FINC300 Intro Risk Mgmt  Ins - Dr Xiangjing Wei Only
+- FINC300 Intro Risk Mgmt  Ins - any instructors Only
+- FINC310 Financial Markets and Institut - Mr John Stone Only
+- FINC310 Financial Markets and Institut - Mr Richard Hauser Only
+- FINC310 Financial Markets and Institut - any instructors Only
+- FINC312 Financial Mgt 2 - Dr Lei Wang Only
+- FINC312 Financial Mgt 2 - any instructors Only
+- FINC312 Financial Mgt 2 Financial Mgt 2 - Dr Lei Wang Only
+- FINC312 Financial Mgt 2 Financial Mgt 2 - any instructors Only
+- FINC313 Investments Investments - Mr Richard Hauser Only
+- FINC313 Investments Investments - any instructors Only
+- FINC318 Internatl Finan Mgt - Dr Lei Wang Only
+- FINC318 Internatl Finan Mgt - any instructors Only
+- FINC332 Intro to Data Analyticsdata Mng  Vislz - Mrs Temidayo Osatuyi Only
+- FINC332 Intro to Data Analyticsdata Mng  Vislz - any instructors Only
+- FINC420 Security Analy and Port Mgmt - Mr Richard Hauser Only
+- FINC420 Security Analy and Port Mgmt - any instructors Only
+- FINC423 Financial Models - Mr Richard Hauser Only
+- FINC423 Financial Models - any instructors Only
+- FINC450 Retirement Estate Plan - Mr Richard Hauser Only
+- FINC450 Retirement Estate Plan - any instructors Only
+- GDPT802 Fnd PathoMed Mgmt 1 - Dr Adriane MacPhedran Only
+- GDPT802 Fnd PathoMed Mgmt 1 - any instructors Only
+- GDPT810 Hlth Care SystPol 1 - Dr Jonathan Ulrich Only
+- GDPT810 Hlth Care SystPol 1 - any instructors Only
+- GDPT811 Applied Anatomy - Dr Donna Skelly Only
+- GDPT811 Applied Anatomy - any instructors Only
+- GDPT812 Fnd in PathoMed Mgmt 2 - Dr Beth Gustafson Only
+- GDPT812 Fnd in PathoMed Mgmt 2 - any instructors Only
+- GDPT814 Evidence-Based Pr 1 - Dr Kristen Snarski Only
+- GDPT814 Evidence-Based Pr 1 - any instructors Only
+- GDPT815 EssentialsPhys Therapy - Dr Adriane MacPhedran Only
+- GDPT815 EssentialsPhys Therapy - any instructors Only
+- GDPT816 Comm Health Initiative 1 - Dr Beth Gustafson Only
+- GDPT816 Comm Health Initiative 1 - any instructors Only
+- GDPT818 Found Human Movement - Dr Carolyn Galleher Only
+- GDPT818 Found Human Movement - any instructors Only
+- GDPT819 Found Human Move Lab - Dr Donna Skelly Only
+- GDPT819 Found Human Move Lab - any instructors Only
+- GDPT821 CardioPulmonary Dysf 1 - Dr Ashley Greenthaner Only
+- GDPT821 CardioPulmonary Dysf 1 - any instructors Only
+- GDPT822 Musculoskeletal Extremt - Dr Carolyn Galleher Only
+- GDPT822 Musculoskeletal Extremt - any instructors Only
+- GDPT824 Musculoskltl Extrem Lab - Dr Carolyn Galleher Only
+- GDPT824 Musculoskltl Extrem Lab - any instructors Only
+- GDPT825 Musculoskeletal Dysf Spine - Dr Donna Skelly Only
+- GDPT825 Musculoskeletal Dysf Spine - any instructors Only
+- GDPT826 Comm Hlth Initiative 2 - Dr Constance Lewis Only
+- GDPT826 Comm Hlth Initiative 2 - any instructors Only
+- GDPT827 Musculoskltl Spine Lab - Dr Carolyn Galleher Only
+- GDPT827 Musculoskltl Spine Lab - any instructors Only
+- GDPT830 Hlth Care Sys  Policy 2 - Dr Jonathan Ulrich Only
+- GDPT830 Hlth Care Sys  Policy 2 - any instructors Only
+- GDPT831 Foundtns In Geriatrics - Dr Constance Lewis Only
+- GDPT831 Foundtns In Geriatrics - any instructors Only
+- GDPT841 Foundations In Pediatrics - Dr Kristen Snarski Only
+- GDPT841 Foundations In Pediatrics - any instructors Only
+- GDPT843 Exam Only
+- GDPT844 Evidence-Based Pr 2 - Dr Kristen Snarski Only
+- GDPT844 Evidence-Based Pr 2 - any instructors Only
+- GDPT845 Neuro Mvmt Dys Lab - Dr Kristen Snarski Only
+- GDPT845 Neuro Mvmt Dys Lab - any instructors Only
+- GDPT847 Clinical Synthesis 1 - Dr Donna Skelly Only
+- GDPT847 Clinical Synthesis 1 - any instructors Only
+- GDPT848 Neuroscience - Mrs Courtney Roca Only
+- GDPT848 Neuroscience - any instructors Only
+- GDPT849 Neuroscience Lab - Mrs Courtney Roca Only
+- GDPT849 Neuroscience Lab - any instructors Only
+- GPHAS600 Pre-Rotatn LecSkill Lab - Mrs Natasha Camera Only
+- GPHAS600 Pre-Rotatn LecSkill Lab - any instructors Only
+- GPHAS601 Pre-Rotatn LecSkill - Mrs Kristen Grippe Only
+- GPHAS601 Pre-Rotatn LecSkill - any instructors Only
+- GPHAS602 Busn PractCurr Iss PA - Brittney Franley Only
+- GPHAS602 Busn PractCurr Iss PA - any instructors Only
+- GPHAS616 Clinical Research - Dr Blake Hoppe Only
+- GPHAS616 Clinical Research - any instructors Only
+- GPHAS619 Fam Med Rotation 3 - Mrs Natasha Camera Only
+- GPHAS619 Fam Med Rotation 3 - any instructors Only
+- GPHAS623 Elective Rotation 1 - Mrs Natasha Camera Only
+- GPHAS623 Elective Rotation 1 - any instructors Only
+- IE201 Engr Proj  Econ - Dr Ikechukwu Ohu Only
+- IE201 Engr Proj  Econ - any instructors Only
+- IE320 Engineering Stats - Junayed Pasha Only
+- IE320 Engineering Stats - any instructors Only
+- IE325 Design of Experiments - Dr Ikechukwu Ohu Only
+- IE325 Design of Experiments - any instructors Only
+- IE350 Operations Research 1 - Junayed Pasha Only
+- IE350 Operations Research 1 - any instructors Only
+- IMGT375 Organizational Internship - Dr Celene Kalivoda Only
+- IMGT375 Organizational Internship - any instructors Only
+- IMGT420 Issues Global Mgmt - Ms Jennifer Karsh Only
+- INTERVIEW Only
+- MATH103 Quantitative Literacy - any instructors Only
+- MATH105 Fundamentals Math - any instructors Only
+- MATH111 College Algebra - Mr Adam Nogaj Only
+- MATH111 College Algebra - Mr Joseph Komorek Only
+- MATH111 College Algebra - any instructors Only
+- MATH111 College Algebra College Algebra - Mr Adam Nogaj Only
+- MATH111 College Algebra College Algebra - any instructors Only
+- MATH112 Trigonometry - Mr Joseph Komorek Only
+- MATH112 Trigonometry - Mr Keven Beringer Only
+- MATH112 Trigonometry - Mrs Christine Cedzo Only
+- MATH112 Trigonometry - any instructors Only
+- MATH112 Trigonometry Trigonometry - Mrs Christine Cedzo Only
+- MATH112 Trigonometry Trigonometry - any instructors Only
+- MATH115 Applied Math for Business - Dr Richard Ligo Only
+- MATH115 Applied Math for Business - Mr Patrick Chadowski Only
+- MATH115 Applied Math for Business - any instructors Only
+- MATH140 Calculus 1 - Dr David Prier Only
+- MATH140 Calculus 1 - Dr Geoffrey Dietz Only
+- MATH140 Calculus 1 - Dr Michael Caulfield Only
+- MATH140 Calculus 1 - Dr Richard Ligo Only
+- MATH140 Calculus 1 - Mr Joseph Komorek Only
+- MATH140 Calculus 1 - Mrs Christine Cedzo Only
+- MATH140 Calculus 1 - any instructors Only
+- MATH141 Calculus 2 - Dr David Prier Only
+- MATH141 Calculus 2 - Dr Geoffrey Dietz Only
+- MATH141 Calculus 2 - Dr Michael Caulfield Only
+- MATH141 Calculus 2 - Mrs Christine Cedzo Only
+- MATH141 Calculus 2 - any instructors Only
+- MATH213 Applied Statistics - Dr Patrick Headley Only
+- MATH213 Applied Statistics - any instructors Only
+- MATH213 Applied Statistics Applied Statistics - Dr Patrick Headley Only
+- MATH213 Applied Statistics Applied Statistics - Mr Adam Nogaj Only
+- MATH213 Applied Statistics Applied Statistics - any instructors Only
+- MATH222 Discrete Math 1 - Dr David Prier Only
+- MATH222 Discrete Math 1 - any instructors Only
+- MATH223 Discrete Math 2 - Dr David Prier Only
+- MATH223 Discrete Math 2 - any instructors Only
+- MATH242 Calculus 3 - Dr Geoffrey Dietz Only
+- MATH242 Calculus 3 - Dr Michael Caulfield Only
+- MATH242 Calculus 3 - Dr Richard Ligo Only
+- MATH242 Calculus 3 - any instructors Only
+- MATH243 Calculus 4 - Dr Richard Ligo Only
+- MATH243 Calculus 4 - any instructors Only
+- MATH304 Diff Equations 1 Diff Equations 1 - Dr Geoffrey Dietz Only
+- MATH304 Diff Equations 1 Diff Equations 1 - any instructors Only
+- MATH310 Number TheoryCrypt - Dr David Prier Only
+- MATH310 Number TheoryCrypt - any instructors Only
+- MATH314 Numerical Analysis - Dr Geoffrey Dietz Only
+- MATH314 Numerical Analysis - any instructors Only
+- ME201 Statics - Dr David Gee Only
+- ME201 Statics - Dr Scott Steinbrink Only
+- ME201 Statics - any instructors Only
+- ME204 Dynamics - Dr Lokesh Saharan Only
+- ME204 Dynamics - any instructors Only
+- ME205 Digital Comp Usage - Dr Scott Steinbrink Only
+- ME205 Digital Comp Usage - any instructors Only
+- ME206 Digital Comp Lab - Dr Scott Steinbrink Only
+- ME206 Digital Comp Lab - any instructors Only
+- ME207 Engineering Graphics - Dr Lokesh Saharan Only
+- ME207 Engineering Graphics - Mr Dan Arndt Only
+- ME207 Engineering Graphics - any instructors Only
+- ME208 Comp Graphics Lab - Dr Lokesh Saharan Only
+- ME208 Comp Graphics Lab - Mr Dan Arndt Only
+- ME208 Comp Graphics Lab - any instructors Only
+- ME214 Strength Materials - Dr Lokesh Saharan Only
+- ME214 Strength Materials - any instructors Only
+- ME215 Strength Matrl Lab - Dr David Gee Only
+- ME215 Strength Matrl Lab - Dr Scott Steinbrink Only
+- ME215 Strength Matrl Lab - any instructors Only
+- ME312 Engr Thermodynamics Engr Thermodynamics - Dr Hamid Torab Only
+- ME312 Engr Thermodynamics Engr Thermodynamics - any instructors Only
+- ME315 Materials Science - Dr Paul Flynn Only
+- ME315 Materials Science - Mr Santosh Angadi Only
+- ME315 Materials Science - any instructors Only
+- ME326 System Dynamics - Dr Lokesh Saharan Only
+- ME326 System Dynamics - any instructors Only
+- ME329 Materials Process - Dr Robert Michael Only
+- ME329 Materials Process - any instructors Only
+- ME332 Instr  Measure Lab - Dr Hamid Torab Only
+- ME332 Instr  Measure Lab - any instructors Only
+- ME336 Fluid Mechanics Fluid Mechanics - Dr David Gee Only
+- ME336 Fluid Mechanics Fluid Mechanics - any instructors Only
+- ME336 Fluid Mechanics - Dr Mahesh Aggarwal Only
+- ME336 Fluid Mechanics - any instructors Only
+- ME337 Heat Transfer Heat Transfer - Dr Hamid Torab Only
+- ME337 Heat Transfer Heat Transfer - any instructors Only
+- ME338 Fluid Mechanics Lab Fluid Mechanics Lab - Dr Hamid Torab Only
+- ME338 Fluid Mechanics Lab Fluid Mechanics Lab - any instructors Only
+- ME339 Heat Transfer Lab - Dr Hamid Torab Only
+- ME339 Heat Transfer Lab - any instructors Only
+- ME350 Engineering Design - Dr Robert Michael Only
+- ME350 Engineering Design - any instructors Only
+- ME360 Machine Design - Bryan Allison Only
+- ME360 Machine Design - any instructors Only
+- ME411 Alternative Energy Sys - Dr Hamid Torab Only
+- ME411 Alternative Energy Sys - any instructors Only
+- ME412 Application of CFD - Dr Baiou Shi Only
+- ME412 Application of CFD - any instructors Only
+- ME440 Advanced Thermodynamics - Dr Hamid Torab Only
+- ME440 Advanced Thermodynamics - any instructors Only
+- ME461 Vibrations Vibrations - Dr Robert Michael Only
+- ME461 Vibrations Vibrations - any instructors Only
+- MGMT380 Executive Leadership - Dr Vishal Arghode Only
+- MGMT380 Executive Leadership - Mr Daniel Zimmerman Only
+- MGMT380 Executive Leadership - any instructors Only
+- MKTG300 Consumer Decision Making - Dr Michael Messina Only
+- MKTG300 Consumer Decision Making - any instructors Only
+- MKTG330 Global Marketing - Mr Timothy Grunzel Only
+- MKTG330 Global Marketing - Mrs Rebecca Russell Only
+- MKTG330 Global Marketing - any instructors Only
+- NURS204 PharmaNsg Implicatn - Mr Brad Cooper Only
+- NURS204 PharmaNsg Implicatn - any instructors Only
+- NURS205 Nursing Prac Comp - Ms Allison DiPlacido Only
+- NURS205 Nursing Prac Comp - Ms Sarah Johnson Only
+- NURS205 Nursing Prac Comp - any instructors Only
+- NURS206 Health Assessment 1 - Ms Andrea Chandler Only
+- NURS206 Health Assessment 1 - Ms Jane Riley Only
+- NURS206 Health Assessment 1 - any instructors Only
+- NURS207 Health Assessment 2 - Mrs Amber Mecca Only
+- NURS207 Health Assessment 2 - Mrs Kathryn Denison Only
+- NURS207 Health Assessment 2 - any instructors Only
+- NURS308 Rsrch Process Nsg - Mrs Amber Mecca Only
+- NURS308 Rsrch Process Nsg - any instructors Only
+- NURS309 Influen HlthDisease - Ms Allison DiPlacido Only
+- NURS309 Influen HlthDisease - Ms Catherine Phillips Only
+- NURS309 Influen HlthDisease - any instructors Only
+- NURS310 Healthy Childbearing - Mrs Ashton Bird Only
+- NURS310 Healthy Childbearing - any instructors Only
+- NURS311 Hlth Rest Older Adlt - Mrs Amber Mecca Only
+- NURS311 Hlth Rest Older Adlt - any instructors Only
+- NURS320 Leadership Seminar - Mrs Stephanie McElhaney Only
+- NURS320 Leadership Seminar - any instructors Only
+- NURS419 Basic DysrhythmiaEKG - Mrs Jean Bulmer Only
+- NURS419 Basic DysrhythmiaEKG - any instructors Only
+- PHAS100 First-Year Seminar - Mrs Jennifer Majewski Only
+- PHAS100 First-Year Seminar - any instructors Only
+- PHAS111 SemIntro to PA Profession - Mrs Heather Adams Only
+- PHAS111 SemIntro to PA Profession - Mrs Jennifer Majewski Only
+- PHAS111 SemIntro to PA Profession - Shawna Alonge Only
+- PHAS111 SemIntro to PA Profession - any instructors Only
+- PHAS121 Medical Terminology - Dr Angela Eller Only
+- PHAS121 Medical Terminology - Mrs Jennifer Majewski Only
+- PHAS121 Medical Terminology - Mrs Mackenzie Starns Only
+- PHAS121 Medical Terminology - Mrs Natasha Camera Only
+- PHAS121 Medical Terminology - any instructors Only
+- PHAS215 CommResources PatntEnctr - Mrs Kristen Grippe Only
+- PHAS215 CommResources PatntEnctr - any instructors Only
+- PHAS300 Leadership Seminar - Mrs Kristen Grippe Only
+- PHAS300 Leadership Seminar - any instructors Only
+- PHAS301 Professional Ethics  Ldrshp - Dr Blake Hoppe Only
+- PHAS301 Professional Ethics  Ldrshp - any instructors Only
+- PHAS363 Research Process - Mr Dexter Witchey Only
+- PHAS363 Research Process - Ms Kathleen Corello Only
+- PHAS363 Research Process - any instructors Only
+- PHAS408 Behavioral Medicine - Mrs Christina Scanlan Only
+- PHAS408 Behavioral Medicine - any instructors Only
+- PHAS411 Physical Diagonosis 1 - Dr Blake Hoppe Only
+- PHAS411 Physical Diagonosis 1 - any instructors Only
+- PHAS413 Physical Diagnosis 2 - Brittney Franley Only
+- PHAS413 Physical Diagnosis 2 - any instructors Only
+- PHAS414 Med Lecture Series 1 - Mrs Natasha Camera Only
+- PHAS414 Med Lecture Series 1 - any instructors Only
+- PHAS415 Med Lecture Series 2 - Mrs Heather Adams Only
+- PHAS415 Med Lecture Series 2 - any instructors Only
+- PHAS416 Phys Diagnosis 3 - Ms Randie Lugenbeal Only
+- PHAS416 Phys Diagnosis 3 - any instructors Only
+- PHAS424 Pharmacotherapeutics 1 - Dr Charles Fetrow Only
+- PHAS424 Pharmacotherapeutics 1 - any instructors Only
+- PHAS425 Pharmacotherapeu 2 - Dr Charles Fetrow Only
+- PHAS425 Pharmacotherapeu 2 - any instructors Only
+- PHAS431 Clinical Science 1 - Mrs Jennifer Majewski Only
+- PHAS431 Clinical Science 1 - any instructors Only
+- PHAS432 Clinical Science 2 - Mrs Natasha Camera Only
+- PHAS432 Clinical Science 2 - any instructors Only
+- PHAS438 PEDSOBGYN Lect Ser - Mrs Heather Adams Only
+- PHAS438 PEDSOBGYN Lect Ser - any instructors Only
+- PHAS445 Problem Based Med - Mrs Heather Adams Only
+- PHAS445 Problem Based Med - any instructors Only
+- PHYS101 Concepts in Physics - Dr Nicholas Conklin Only
+- PHYS101 Concepts in Physics - any instructors Only
+- PHYS105 College Physics 1 - Mr Perry Hilburn Only
+- PHYS105 College Physics 1 - any instructors Only
+- PHYS106 College Phys Lab 1 - Dr Nicholas Conklin Only
+- PHYS106 College Phys Lab 1 - any instructors Only
+- PHYS108 College Physics 2 - Dr David Horne Only
+- PHYS108 College Physics 2 - Dr Nicholas Conklin Only
+- PHYS108 College Physics 2 - Mr Perry Hilburn Only
+- PHYS108 College Physics 2 - any instructors Only
+- PHYS109 College Phys Lab 2 - Dr Nicholas Conklin Only
+- PHYS109 College Phys Lab 2 - Mr Perry Hilburn Only
+- PHYS109 College Phys Lab 2 - any instructors Only
+- PHYS210 Fund Phys 1 Mechanics - Dr David Horne Only
+- PHYS210 Fund Phys 1 Mechanics - Mr Perry Hilburn Only
+- PHYS210 Fund Phys 1 Mechanics - any instructors Only
+- PHYS211 Fund Phys 1 Lab - Staff Only
+- PHYS211 Fund Phys 1 Lab - any instructors Only
+- PHYS212 Fund Phys 2 FldTherm - Dr David Horne Only
+- PHYS212 Fund Phys 2 FldTherm - any instructors Only
+- PHYS213 Fund Phys 2 Lab - Mr Perry Hilburn Only
+- PHYS214 Fund Phys 3 ElectricityMagnetism - Mr Allen Madura Only
+- PHYS214 Fund Phys 3 ElectricityMagnetism - any instructors Only
+- PHYS218 Gen Phy Lab for Engr - any instructors Only
+- PPRO391 Special Topics - Mrs Melanie Gustafson-Ropski Only
+- PPRO391 Special Topics - any instructors Only
+- PSYC211 Psych Statistics 1 - Dr Jessica Hartnett Only
+- PSYC211 Psych Statistics 1 - Dr John Ranney Only
+- PSYC211 Psych Statistics 1 - Dr Timothy Caswell Only
+- PSYC211 Psych Statistics 1 - any instructors Only
+- PSYC211 Psych Statistics 1 Psych Statistics 1 - Dr Jessica Hartnett Only
+- PSYC211 Psych Statistics 1 Psych Statistics 1 - Dr John Ranney Only
+- PSYC211 Psych Statistics 1 Psych Statistics 1 - Dr Timothy Caswell Only
+- PSYC211 Psych Statistics 1 Psych Statistics 1 - any instructors Only
+- RADS441 Intro To Radiology - Gail Schroeder Only
+- RADS441 Intro To Radiology - any instructors Only
+- SPRT130 Nutr Sprt  Exercise - Dr Suzanne Kitts Only
+- SPRT130 Nutr Sprt  Exercise - any instructors Only
+- SPRT240 Sprt PsycThry  Appl - Dr Jason Willow Only
+- SPRT240 Sprt PsycThry  Appl - any instructors Only
+- SPRT250 Psyc AspctsExerPhys Act - Dr Jason Willow Only
+- SPRT250 Psyc AspctsExerPhys Act - any instructors Only
+- SPRT270 Personal Training - Mrs Jenna Rappold Only
+- SPRT270 Personal Training - any instructors Only
+- SPRT310 Rsch Meth Exercise Sci - Ms Kara Kern Only
+- SPRT310 Rsch Meth Exercise Sci - any instructors Only
+- SPRT360 Kinesiology - Dr Kory Stauffer Only
+- SPRT360 Kinesiology - Ms Elizabeth Miller Only
+- SPRT360 Kinesiology - any instructors Only
+- SPRT361 Kinesiology Lab - Dr Suzanne Kitts Only
+- SPRT361 Kinesiology Lab - any instructors Only
+- SPRT385 Psyc of Injury and Rehab - Dr Jason Willow Only
+- SPRT385 Psyc of Injury and Rehab - any instructors Only
+- SPRT390 Physiology Exrc Sprt - Dr Kory Stauffer Only
+- SPRT390 Physiology Exrc Sprt - any instructors Only
+- SPRT391 Physio Exrc Sprt Lab - Mrs Jenna Rappold Only
+- SPRT391 Physio Exrc Sprt Lab - Ms Kara Kern Only
+- SPRT391 Physio Exrc Sprt Lab - any instructors Only
+- SPRT400 Ftn Assess Exrc Presc - Ms Kara Kern Only
+- SPRT400 Ftn Assess Exrc Presc - any instructors Only
+- SPRT401 Fitness Assess Lab - Mrs Jenna Rappold Only
+- SPRT401 Fitness Assess Lab - any instructors Only
+- Visual Body Software Only
+- EvalInter Neuro Mvt Dys - Dr Beth Gustafson Only
+- EvalInter Neuro Mvt Dys - any instructors Only

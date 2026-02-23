@@ -61,8 +61,8 @@ function generateTimeSlots(availability: Availability[], appointments: Appointme
   // Convert to array, sort, and fill in hourly slots
   const sortedTimes = Array.from(allTimes).sort()
   if (sortedTimes.length === 0) {
-    // Default fallback: 1 PM to 8 PM
-    return ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"]
+    // Default fallback: 2 PM to 8 PM (last slot is 8pm-9pm)
+    return ["14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"]
   }
   
   const minHour = parseInt(sortedTimes[0].split(':')[0])
@@ -122,8 +122,21 @@ function getAppointmentForCell(
   })
 }
 
-export function ScheduleGrid() {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
+interface ScheduleGridProps {
+  /** Controlled date (YYYY-MM-DD). When provided with onChange, parent controls the date. */
+  value?: string
+  /** Called when the user changes the selected date. */
+  onChange?: (date: string) => void
+}
+
+export function ScheduleGrid({ value, onChange }: ScheduleGridProps = {}) {
+  const [internalDate, setInternalDate] = useState(new Date().toISOString().split("T")[0])
+  const selectedDate = value ?? internalDate
+  const setSelectedDate = (d: string) => {
+    if (onChange) onChange(d)
+    else setInternalDate(d)
+  }
+
   const [scheduleData, setScheduleData] = useState<ScheduleData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -290,7 +303,7 @@ export function ScheduleGrid() {
                           cellClass += "bg-orange-500 hover:bg-orange-600 cursor-pointer"
                         }
                       } else if (status === "available") {
-                        cellClass += "bg-gray-200 hover:bg-gray-300 cursor-pointer"
+                        cellClass += "bg-white hover:bg-gray-100 cursor-pointer border-gray-300"
                       } else {
                         cellClass += "bg-gray-600 hover:bg-gray-700 cursor-not-allowed"
                       }

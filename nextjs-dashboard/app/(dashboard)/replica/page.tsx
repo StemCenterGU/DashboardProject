@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation"
+import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Code2 } from "lucide-react"
 
 export default async function ReplicaPage() {
@@ -26,15 +28,17 @@ export default async function ReplicaPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Coming next</CardTitle>
+          <CardTitle>Replica / new features</CardTitle>
           <CardDescription>
-            Replica of the WCOnline booking site — same tables, <code className="text-xs bg-muted px-1 rounded">source = &apos;replica&apos;</code>
+            The WCOnline-style week schedule lives in the main <strong>Scheduling</strong> section (Schedule Grid tab).
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-4">
+          <Link href="/scheduling">
+            <Button variant="outline">Go to Scheduling (week view)</Button>
+          </Link>
           <ul className="list-disc list-inside text-sm text-muted-foreground">
-            <li>Student-facing booking UI (replica of WCOnline)</li>
-            <li>Appointments and slots with <code className="bg-muted px-1 rounded">source = &apos;replica&apos;</code></li>
+            <li>Appointments and slots with <code className="bg-muted px-1 rounded">source = &apos;replica&apos;</code> when booked from replica flows</li>
             <li>Dashboard continues to show WCOnline-synced data; replica data appears in the same views</li>
           </ul>
         </CardContent>

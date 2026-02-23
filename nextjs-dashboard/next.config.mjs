@@ -5,6 +5,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Silence "webpack config but no turbopack config" in Next.js 16; we use --webpack for dev/build.
+  turbopack: {},
   async rewrites() {
     return [
       // Rewrite to Flask backend only for specific routes not handled by Next.js
