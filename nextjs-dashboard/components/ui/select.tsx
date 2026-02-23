@@ -87,28 +87,6 @@ const SelectContent = React.forwardRef<
       side={forceDown ? "bottom" : side}
       sideOffset={4}
       avoidCollisions={forceDown ? false : (avoidCollisions ?? true)}
-      onInteractOutside={(e) => {
-        // Allow page scrolling while dropdown is open - don't close on scroll interactions
-        const target = e.target as HTMLElement
-        // Prevent closing when interacting with body/html (scrolling)
-        if (target?.tagName === 'HTML' || target?.tagName === 'BODY' || target === document.body || target === document.documentElement) {
-          e.preventDefault()
-          return
-        }
-        // Also prevent closing when clicking on scrollbars (narrow elements)
-        const rect = target?.getBoundingClientRect()
-        const viewportWidth = window.innerWidth
-        const viewportHeight = window.innerHeight
-        if (rect) {
-          // Check if clicking near edges (where scrollbars typically are)
-          const isNearRightEdge = rect.right >= viewportWidth - 20
-          const isNearBottomEdge = rect.bottom >= viewportHeight - 20
-          if ((isNearRightEdge && rect.width < 30) || (isNearBottomEdge && rect.height < 30)) {
-            e.preventDefault()
-            return
-          }
-        }
-      }}
       {...props}
     >
       <SelectScrollUpButton />
