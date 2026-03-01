@@ -51,6 +51,7 @@ interface WeekAsDayGridsProps {
   courseFilter?: string
   meetingTypeFilter?: string
   apiPath?: string
+  onSlotClick?: (tutorId: string, tutorName: string, date: string, hour: number) => void
 }
 
 const slotKey = (tutorId: string, dateStr: string, hour: number) =>
@@ -62,6 +63,7 @@ export function WeekAsDayGrids({
   courseFilter = "all",
   meetingTypeFilter = "all",
   apiPath = "/api/scheduling/schedule-week",
+  onSlotClick,
 }: WeekAsDayGridsProps) {
   const [data, setData] = useState<WeekData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -208,8 +210,20 @@ export function WeekAsDayGrids({
                           : isBooked
                             ? "Booked"
                             : "Not available"
+
+                        const handleClick = () => {
+                          if (isAvailable && onSlotClick) {
+                            onSlotClick(tutor.tutor_id, tutor.tutor_name, day.date, hour)
+                          }
+                        }
+
                         return (
-                          <td key={hour} className={cellClass} title={title} />
+                          <td
+                            key={hour}
+                            className={cellClass}
+                            title={title}
+                            onClick={handleClick}
+                          />
                         )
                       })}
                     </tr>

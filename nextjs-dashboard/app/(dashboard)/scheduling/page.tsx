@@ -15,6 +15,7 @@ import { useState, useEffect, useRef } from "react"
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, parseISO } from "date-fns"
 import { WeekAsDayGrids } from "@/components/week-as-day-grids"
 import { TodayAppointments, UpcomingAppointments } from "@/components/scheduling"
+import { AppointmentBookingDialog } from "@/components/appointment-booking-dialog"
 
 interface Appointment {
   appointment_id: string
@@ -78,6 +79,15 @@ export default function SchedulingPage() {
   const [courseFilter, setCourseFilter] = useState<string>("all")
   const [meetingTypeFilter, setMeetingTypeFilter] = useState<string>("all")
   const scheduleDateInputRef = useRef<HTMLInputElement>(null)
+
+  // Booking dialog state
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false)
+  const [selectedSlot, setSelectedSlot] = useState<{
+    tutorId: string
+    tutorName: string
+    date: string
+    startTime: string
+  } | null>(null)
 
   const normalizeFocusName = (label: string) => {
     const trimmed = label.trim()
@@ -224,6 +234,23 @@ export default function SchedulingPage() {
   const goNextWeek = () => setSelectedScheduleDate(format(addWeeks(weekStart, 1), "yyyy-MM-dd"))
   const goCurrentWeek = () => setSelectedScheduleDate(today)
 
+  // Handle slot click from schedule grid
+  const handleSlotClick = (tutorId: string, tutorName: string, date: string, hour: number) => {
+    // Convert hour to HH:MM format
+    const startTime = `${String(hour).padStart(2, "0")}:00`
+    setSelectedSlot({ tutorId, tutorName, date, startTime })
+    setBookingDialogOpen(true)
+  }
+
+  // Handle successful booking
+  const handleBookingSuccess = () => {
+    // Refresh today's appointments if the booking is for today
+    if (activeTab === "appointments") {
+      fetchTodayAppointments()
+      fetchUpcomingAppointments(currentPage)
+    }
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -231,10 +258,6 @@ export default function SchedulingPage() {
           <h1 className="text-3xl font-bold">Scheduling</h1>
           <p className="text-muted-foreground">Manage appointments and availability</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Appointment
-        </Button>
       </div>
 
       {/* Tabs */}
@@ -417,6 +440,7 @@ export default function SchedulingPage() {
             staffFilter={staffFilter}
             courseFilter={courseFilter}
             meetingTypeFilter={meetingTypeFilter}
+            onSlotClick={handleSlotClick}
           />
         </div>
       )}
@@ -532,6 +556,18 @@ export default function SchedulingPage() {
         </Card>
       )}
 
+      {/* Appointment Booking Dialog */}
+      {selectedSlot && (
+        <AppointmentBookingDialog
+          open={bookingDialogOpen}
+          onOpenChange={setBookingDialogOpen}
+          tutorId={selectedSlot.tutorId}
+          tutorName={selectedSlot.tutorName}
+          date={selectedSlot.date}
+          startTime={selectedSlot.startTime}
+          onSuccess={handleBookingSuccess}
+        />
+      )}
     </div>
   )
 }
