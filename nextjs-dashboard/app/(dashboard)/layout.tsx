@@ -2,6 +2,9 @@ import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { Navbar } from "@/components/navbar"
 
+// Force dynamic rendering for all dashboard pages (authentication required)
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardLayout({
   children,
 }: {

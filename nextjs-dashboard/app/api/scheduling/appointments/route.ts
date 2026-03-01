@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { limit, page, status, start_date, end_date, sort } = validation.data
+    const { limit = 10, page = 1, status, start_date, end_date, sort = 'desc' } = validation.data
     const offset = (page - 1) * limit
     const sortOrder = sort === "asc"
 
