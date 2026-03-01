@@ -58,6 +58,31 @@ export function AppointmentBookingDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+
+    // Validate that the appointment is not in the past
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const appointmentDate = new Date(date + "T00:00:00")
+
+    if (appointmentDate < today) {
+      setError("Cannot book appointments for past dates. Please select a future date.")
+      return
+    }
+
+    // If booking for today, check if the time is in the past
+    if (appointmentDate.getTime() === today.getTime()) {
+      const now = new Date()
+      const [startHours, startMinutes] = startTime.split(":").map(Number)
+      const appointmentDateTime = new Date()
+      appointmentDateTime.setHours(startHours, startMinutes || 0, 0, 0)
+
+      if (appointmentDateTime < now) {
+        setError("Cannot book appointments for past times. Please select a future time slot.")
+        return
+      }
+    }
+
     setLoading(true)
 
     try {

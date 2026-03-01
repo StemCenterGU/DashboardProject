@@ -194,8 +194,20 @@ export function WeekAsDayGrids({
                       {hours.map((hour) => {
                         const key = slotKey(tutor.tutor_id, day.date, hour)
                         const status = slotStatus[key]
-                        const isAvailable = status === "available"
+                        let isAvailable = status === "available"
                         const isBooked = status === "booked"
+
+                        // Check if this slot is in the past
+                        const now = new Date()
+                        const slotDate = new Date(day.date + "T00:00:00")
+                        slotDate.setHours(hour, 0, 0, 0)
+                        const isPast = slotDate < now
+
+                        // Disable past slots
+                        if (isPast && isAvailable) {
+                          isAvailable = false
+                        }
+
                         let cellClass =
                           "border border-gray-300 p-2 min-h-[50px] transition-colors "
                         if (isBooked) {
@@ -205,14 +217,20 @@ export function WeekAsDayGrids({
                         } else {
                           cellClass += "bg-gray-600 hover:bg-gray-700 cursor-not-allowed"
                         }
-                        const title = isAvailable
+
+                        let title = isAvailable
                           ? `Available - ${formatTimeLabel(hour)}`
                           : isBooked
                             ? "Booked"
                             : "Not available"
 
+                        // Update title for past slots
+                        if (isPast && status === "available") {
+                          title = "Past time slot - unavailable"
+                        }
+
                         const handleClick = () => {
-                          if (isAvailable && onSlotClick) {
+                          if (isAvailable && !isPast && onSlotClick) {
                             onSlotClick(tutor.tutor_id, tutor.tutor_name, day.date, hour)
                           }
                         }

@@ -55,6 +55,33 @@ export async function POST(request: NextRequest) {
       notes,
     } = validation.data
 
+    // Prevent booking appointments in the past
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const appointmentDate = new Date(appointment_date + "T00:00:00")
+
+    if (appointmentDate < today) {
+      return NextResponse.json(
+        { error: "Cannot book appointments for past dates" },
+        { status: 400 }
+      )
+    }
+
+    // If booking for today, check if the time is in the past
+    if (appointmentDate.getTime() === today.getTime()) {
+      const now = new Date()
+      const [startHours, startMinutes] = start_time.split(":").map(Number)
+      const appointmentDateTime = new Date()
+      appointmentDateTime.setHours(startHours, startMinutes || 0, 0, 0)
+
+      if (appointmentDateTime < now) {
+        return NextResponse.json(
+          { error: "Cannot book appointments for past times" },
+          { status: 400 }
+        )
+      }
+    }
+
     const appointment_id = `replica-${randomUUID()}`
     const row = {
       appointment_id,
