@@ -46,6 +46,12 @@ interface Course {
   course_name: string
 }
 
+interface FocusOption {
+  focus_id: string
+  course_code: string | null
+  focus_label: string
+}
+
 export default function SchedulingPage() {
   const [activeTab, setActiveTab] = useState("schedule")
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([])
@@ -67,10 +73,24 @@ export default function SchedulingPage() {
   })
   const [scheduleTutors, setScheduleTutors] = useState<Tutor[]>([])
   const [scheduleCourses, setScheduleCourses] = useState<Course[]>([])
+  const [scheduleFocusOptions, setScheduleFocusOptions] = useState<FocusOption[]>([])
   const [staffFilter, setStaffFilter] = useState<string>("all")
   const [courseFilter, setCourseFilter] = useState<string>("all")
   const [meetingTypeFilter, setMeetingTypeFilter] = useState<string>("all")
   const scheduleDateInputRef = useRef<HTMLInputElement>(null)
+
+  const normalizeFocusName = (label: string) => {
+    const trimmed = label.trim()
+    return trimmed.endsWith(" Only") ? trimmed.slice(0, -5).trim() : trimmed
+  }
+
+  const parseInstructorFromLabel = (label: string) => {
+    const noOnly = normalizeFocusName(label)
+    const dashIdx = noOnly.lastIndexOf(" - ")
+    if (dashIdx < 0) return "any instructors"
+    const instr = noOnly.slice(dashIdx + 3).trim()
+    return instr || "any instructors"
+  }
 
   // Get today's date in local timezone (YYYY-MM-DD format)
   const getLocalDate = (date: Date) => {
@@ -102,15 +122,18 @@ export default function SchedulingPage() {
       // Fetch tutors and courses for schedule grid
       Promise.all([
         fetch("/api/scheduling/tutors").then((res) => res.ok ? res.json() : { tutors: [] }),
-        fetch("/api/scheduling/schedule-week").then((res) => res.ok ? res.json() : { courses: [] })
+        fetch("/api/scheduling/schedule-week").then((res) => res.ok ? res.json() : { courses: [] }),
+        fetch("/api/scheduling/focus-options").then((res) => res.ok ? res.json() : { options: [] }),
       ])
-        .then(([tutorsData, weekData]) => {
+        .then(([tutorsData, weekData, focusData]) => {
           setScheduleTutors(tutorsData.tutors ?? [])
           setScheduleCourses(weekData.courses ?? [])
+          setScheduleFocusOptions(focusData.options ?? [])
         })
         .catch(() => {
           setScheduleTutors([])
           setScheduleCourses([])
+          setScheduleFocusOptions([])
         })
     }
   }, [activeTab, currentPage])
@@ -340,8 +363,14 @@ export default function SchedulingPage() {
                         {courseFilter === "all"
                           ? "Show All \"Course or Focus\" Options"
                           : (() => {
-                              const c = scheduleCourses.find((x) => x.course_id === courseFilter)
-                              return c ? (c.course_code ? `${c.course_code}: ` : "") + c.course_name : "Show All \"Course or Focus\" Options"
+                              const o = scheduleFocusOptions.find((x) => {
+                                const base =
+                                  x.course_code ?? `name:${normalizeFocusName(x.focus_label)}`
+                                const instr = parseInstructorFromLabel(x.focus_label)
+                                const value = `${base}|instr:${instr}`
+                                return value === courseFilter
+                              })
+                              return o ? o.focus_label : "Show All \"Course or Focus\" Options"
                             })()}
                       </span>
                       <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -351,12 +380,17 @@ export default function SchedulingPage() {
                     <DropdownMenuItem onClick={() => setCourseFilter("all")}>
                       Show All &quot;Course or Focus&quot; Options
                     </DropdownMenuItem>
-                    {scheduleCourses.map((c) => (
+                    {scheduleFocusOptions.map((o) => (
                       <DropdownMenuItem
-                        key={c.course_id}
-                        onClick={() => setCourseFilter(c.course_id)}
+                        key={o.focus_id}
+                        onClick={() => {
+                          const base =
+                            o.course_code ?? `name:${normalizeFocusName(o.focus_label)}`
+                          const instr = parseInstructorFromLabel(o.focus_label)
+                          setCourseFilter(`${base}|instr:${instr}`)
+                        }}
                       >
-                        {c.course_code ? `${c.course_code}: ` : ""}{c.course_name}
+                        {o.focus_label}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -370,6 +404,8 @@ export default function SchedulingPage() {
                   className="w-full border rounded-md px-3 py-2 bg-background text-foreground"
                 >
                   <option value="all">Show All Meeting Types</option>
+                  <option value="face_to_face">Face-to-Face Only</option>
+                  <option value="online">Online Only</option>
                 </select>
               </div>
             </div>
@@ -380,6 +416,7 @@ export default function SchedulingPage() {
             weekStart={weekStartStr}
             staffFilter={staffFilter}
             courseFilter={courseFilter}
+            meetingTypeFilter={meetingTypeFilter}
           />
         </div>
       )}

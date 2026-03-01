@@ -1,8 +1,12 @@
 # WCOnline Replica vs WCOnline API — Database Strategy
 
+## Current policy: **Supabase only**
+
+**Data is no longer fetched from the WCOnline API.** The WCOnline scheduled sync is disabled. All data is read from and written to **Supabase only**. Existing data in Supabase is kept. See **docs/DATA-SOURCE-POLICY.md** for the full data source policy.
+
 ## Summary: **No new tables needed**
 
-Keep using the same **`appointments`** and **`available_slots`** tables. Use the **`source`** column to distinguish data origin. The existing WCOnline sync will continue to work and will **not** touch replica data.
+Keep using the same **`appointments`** and **`available_slots`** tables. Use the **`source`** column to distinguish data origin. The WCOnline sync is **disabled** and does **not** run; replica and manual data in Supabase is the live source.
 
 ---
 
@@ -29,9 +33,9 @@ Keep using the same **`appointments`** and **`available_slots`** tables. Use the
    - When a student books via the replica UI → insert into `appointments` with `source = 'replica'`.
    - When you create or update slots in the replica → use `available_slots` with `source = 'replica'` (or keep using `tutor_availability` and existing slot logic if that fits better).
 
-3. **Keep the old WCOnline integration as-is**  
-   - Continue running the WCOnline sync script. It will only affect rows with `source = 'wconline'`.  
-   - Replica rows (`source = 'replica'`) are never deleted or overwritten by the sync.
+3. **WCOnline sync is disabled**  
+   - The scheduled WCOnline sync no longer runs. Data is not fetched from the WCOnline API.  
+   - All reads and writes use Supabase. Existing `source = 'wconline'` rows in Supabase are kept but not updated by any sync.
 
 4. **Unified or filtered views**  
    - **Unified:** Don’t filter by `source` in the dashboard so all appointments/slots (WCOnline + replica) show together.  

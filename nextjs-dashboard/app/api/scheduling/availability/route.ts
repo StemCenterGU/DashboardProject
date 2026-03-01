@@ -1,7 +1,23 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase-server"
+import { requireAuth } from "@/lib/auth"
 
+/**
+ * Get tutor availability
+ * GET /api/scheduling/availability
+ * Requires: Authentication
+ */
 export async function GET(request: NextRequest) {
+  try {
+    // Require authentication
+    await requireAuth()
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Unauthorized - authentication required" },
+      { status: 401 }
+    )
+  }
+
   try {
     const supabase = await createServerClient()
     if (!supabase) {

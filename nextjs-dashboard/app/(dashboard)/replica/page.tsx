@@ -38,8 +38,9 @@ export default async function ReplicaPage() {
             <Button variant="outline">Go to Scheduling (week view)</Button>
           </Link>
           <ul className="list-disc list-inside text-sm text-muted-foreground">
-            <li>Appointments and slots with <code className="bg-muted px-1 rounded">source = &apos;replica&apos;</code> when booked from replica flows</li>
-            <li>Dashboard continues to show WCOnline-synced data; replica data appears in the same views</li>
+            <li>All data is read from and written to <strong>Supabase only</strong> (no WCOnline API fetch). See <code className="bg-muted px-1 rounded">docs/DATA-SOURCE-POLICY.md</code>.</li>
+            <li>Creating appointments or tutors on the website stores them in Supabase; schedule, calendar, and reports reflect that data.</li>
+            <li>Existing data in Supabase is kept; new rows use <code className="bg-muted px-1 rounded">source = &apos;replica&apos;</code> or <code className="bg-muted px-1 rounded">manual</code> when created from the site.</li>
           </ul>
         </CardContent>
       </Card>

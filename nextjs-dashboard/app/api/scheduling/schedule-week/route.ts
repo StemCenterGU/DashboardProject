@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase-server"
 import { format, addDays, parseISO } from "date-fns"
+import { requireAuth } from "@/lib/auth"
 
 const HOUR_START = 14 // 2pm
 const HOUR_END = 20 // 8pm (last slot is 8pm-9pm)
 
+/**
+ * Get weekly schedule with tutor availability and appointments
+ * GET /api/scheduling/schedule-week
+ * Requires: Authentication
+ */
 export async function GET(request: NextRequest) {
+  try {
+    // Require authentication
+    await requireAuth()
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Unauthorized - authentication required" },
+      { status: 401 }
+    )
+  }
+
   try {
     const supabase = await createServerClient()
     if (!supabase) {
@@ -14,6 +30,10 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams
     const weekStartParam = searchParams.get("week_start")
+    const meetingType = searchParams.get("meeting_type") ?? "all" // "all" | "online" | "face_to_face"
+    const courseCode = searchParams.get("course_code") ?? "" // when set, only tutors who support this course (by code)
+    const focusName = searchParams.get("focus_name") ?? "" // for non-code focuses (match courses.course_name)
+    const instructor = searchParams.get("instructor") ?? "" // when set, filter by instructor (with "any instructors" fallback)
     let weekStart: Date
     if (weekStartParam) {
       weekStart = parseISO(weekStartParam)
@@ -31,22 +51,59 @@ export async function GET(request: NextRequest) {
     const startStr = format(weekStart, "yyyy-MM-dd")
     const endStr = format(weekEnd, "yyyy-MM-dd")
 
-    const [tutorsRes, availabilityRes, appointmentsRes, coursesRes] = await Promise.all([
+    const [tutorsRes, availabilityRes, appointmentsRes, coursesRes, tutorCoursesRes] = await Promise.all([
       supabase.from("tutors").select("tutor_id, tutor_name").order("tutor_name"),
       supabase.from("tutor_availability").select("tutor_id, day_of_week, start_time, end_time").eq("is_available", true),
       supabase
         .from("appointments")
-        .select("tutor_id, appointment_date, start_time, end_time, status")
+        .select("tutor_id, appointment_date, start_time, end_time, status, is_online")
         .gte("appointment_date", startStr)
         .lte("appointment_date", endStr),
       supabase.from("courses").select("course_id, course_code, course_name").eq("active", true).order("course_name"),
+      courseCode
+        ? supabase
+            .from("tutor_courses")
+            // join through tutor_courses.course_id -> courses.course_id
+            .select("tutor_id, courses!inner(course_code)")
+            .in(
+              "instructor",
+              instructor
+                ? instructor === "any instructors"
+                  ? ["any instructors"]
+                  : [instructor, "any instructors"]
+                : ["any instructors", instructor].filter(Boolean) as string[]
+            )
+            .eq("courses.course_code", courseCode)
+        : focusName
+          ? supabase
+              .from("tutor_courses")
+              .select("tutor_id, courses!inner(course_name)")
+              .in(
+                "instructor",
+                instructor
+                  ? instructor === "any instructors"
+                    ? ["any instructors"]
+                    : [instructor, "any instructors"]
+                  : ["any instructors", instructor].filter(Boolean) as string[]
+              )
+              .eq("courses.course_name", focusName)
+        : Promise.resolve({ data: null, error: null }),
     ])
 
     if (tutorsRes.error) return NextResponse.json({ error: tutorsRes.error.message }, { status: 500 })
     if (availabilityRes.error) return NextResponse.json({ error: availabilityRes.error.message }, { status: 500 })
     if (appointmentsRes.error) return NextResponse.json({ error: appointmentsRes.error.message }, { status: 500 })
 
-    const tutors = tutorsRes.data || []
+    // Base tutors list from DB (do not dedupe here; filtering relies on tutor_id)
+    let tutors = tutorsRes.data || []
+    let allowedTutorIds: Set<string> | null = null
+    if ((courseCode || focusName) && !tutorCoursesRes.error && tutorCoursesRes.data?.length) {
+      allowedTutorIds = new Set((tutorCoursesRes.data as { tutor_id: string }[]).map((r) => r.tutor_id))
+      tutors = tutors.filter((t) => allowedTutorIds!.has(t.tutor_id))
+    } else if ((courseCode || focusName) && !tutorCoursesRes.error && Array.isArray(tutorCoursesRes.data) && tutorCoursesRes.data.length === 0) {
+      allowedTutorIds = new Set()
+      tutors = []
+    }
     const availability = availabilityRes.data || []
     const appointments = appointmentsRes.data || []
     const courses = coursesRes.data || []
@@ -78,11 +135,18 @@ export async function GET(request: NextRequest) {
             return aStart <= slotStart && aEnd >= slotEnd
           })
 
+          const matchesMeetingType = (apt: { is_online?: boolean | null }) => {
+            if (meetingType === "all") return true
+            if (meetingType === "online") return apt.is_online === true
+            if (meetingType === "face_to_face") return apt.is_online !== true
+            return true
+          }
           const booked = appointments.some(
             (apt) =>
               apt.tutor_id === tutor.tutor_id &&
               apt.appointment_date === dateStr &&
               String(apt.status) !== "cancelled" &&
+              matchesMeetingType(apt) &&
               (() => {
                 const aptStart = String(apt.start_time).slice(0, 8)
                 const aptEnd = String(apt.end_time).slice(0, 8)
@@ -103,6 +167,15 @@ export async function GET(request: NextRequest) {
 
     const hours = Array.from({ length: HOUR_END - HOUR_START + 1 }, (_, i) => HOUR_START + i)
 
+    let finalSlotStatus = slotStatus
+    if (allowedTutorIds) {
+      finalSlotStatus = {} as Record<string, SlotStatus>
+      for (const key of Object.keys(slotStatus)) {
+        const tutorId = key.split("|")[0]
+        if (allowedTutorIds.has(tutorId)) finalSlotStatus[key] = slotStatus[key]
+      }
+    }
+
     return NextResponse.json({
       week_start: startStr,
       week_end: endStr,
@@ -111,7 +184,7 @@ export async function GET(request: NextRequest) {
       courses,
       days,
       hours,
-      slotStatus,
+      slotStatus: finalSlotStatus,
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

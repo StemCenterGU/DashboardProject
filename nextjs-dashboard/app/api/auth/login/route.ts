@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
+import { rateLimit, RateLimits } from '@/lib/rate-limit'
+import { logger, productionLogger } from '@/lib/logger'
 
+/**
+ * User login endpoint
+ * POST /api/auth/login
+ * Rate limited: 5 attempts per minute
+ */
 export async function POST(request: NextRequest) {
+  // Apply strict rate limiting (5 requests per minute)
+  const rateLimitResult = rateLimit(request, RateLimits.strict)
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response!
+  }
+
   try {
     const { email, password } = await request.json()
 
@@ -29,8 +42,8 @@ export async function POST(request: NextRequest) {
     })
 
     if (authError) {
-      console.error('Login error:', authError)
-      
+      logger.error('Login error:', authError)
+
       // Provide user-friendly error messages
       let errorMessage = 'Invalid email or password'
       if (authError.message.includes('Invalid login credentials')) {
@@ -62,8 +75,14 @@ export async function POST(request: NextRequest) {
         .eq('user_id', authData.user.id)
     } catch (updateError) {
       // Log but don't fail login if timestamp update fails
-      console.warn('Failed to update last_login:', updateError)
+      logger.warn('Failed to update last_login:', updateError)
     }
+
+    // Audit log successful login
+    productionLogger.audit('login', authData.user.id, {
+      email: authData.user.email,
+      timestamp: new Date().toISOString(),
+    })
 
     // Supabase Auth handles session management automatically via cookies
     // The session is already set by Supabase
@@ -73,7 +92,7 @@ export async function POST(request: NextRequest) {
       session: authData.session,
     })
   } catch (error) {
-    console.error('Login error:', error)
+    logger.error('Login error:', error)
     return NextResponse.json(
       { error: 'An error occurred during login' },
       { status: 500 }

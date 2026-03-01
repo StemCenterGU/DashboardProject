@@ -49,6 +49,7 @@ interface WeekAsDayGridsProps {
   weekStart: string
   staffFilter?: string
   courseFilter?: string
+  meetingTypeFilter?: string
   apiPath?: string
 }
 
@@ -58,6 +59,8 @@ const slotKey = (tutorId: string, dateStr: string, hour: number) =>
 export function WeekAsDayGrids({
   weekStart,
   staffFilter = "all",
+  courseFilter = "all",
+  meetingTypeFilter = "all",
   apiPath = "/api/scheduling/schedule-week",
 }: WeekAsDayGridsProps) {
   const [data, setData] = useState<WeekData | null>(null)
@@ -66,7 +69,32 @@ export function WeekAsDayGrids({
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    fetch(`${apiPath}?week_start=${weekStart}`)
+    const params = new URLSearchParams({ week_start: weekStart })
+    if (meetingTypeFilter && meetingTypeFilter !== "all") {
+      params.set("meeting_type", meetingTypeFilter)
+    }
+    if (courseFilter && courseFilter !== "all") {
+      let raw = courseFilter
+      let instructor = ""
+      const instrMarker = "|instr:"
+      const instrIdx = raw.indexOf(instrMarker)
+      if (instrIdx >= 0) {
+        instructor = raw.slice(instrIdx + instrMarker.length)
+        raw = raw.slice(0, instrIdx)
+      }
+
+      if (raw.startsWith("name:")) {
+        params.set("focus_name", raw.slice("name:".length))
+      } else {
+        // raw is a course_code (e.g. "BCOR105")
+        params.set("course_code", raw)
+      }
+
+      if (instructor) {
+        params.set("instructor", instructor)
+      }
+    }
+    fetch(`${apiPath}?${params.toString()}`)
       .then((res) => {
         if (!res.ok) {
           throw new Error(`Failed to fetch: ${res.status}`)
@@ -86,12 +114,19 @@ export function WeekAsDayGrids({
     return () => {
       cancelled = true
     }
-  }, [apiPath, weekStart])
+  }, [apiPath, weekStart, meetingTypeFilter, courseFilter])
 
   const tutors = data?.tutors ?? []
   const days = data?.days ?? []
   const hours = data?.hours ?? []
   const slotStatus = data?.slotStatus ?? {}
+
+  // Does this tutor have any slot (available or booked) on this day?
+  const hasAnySlotForDay = (tutorId: string, dateStr: string) =>
+    hours.some((hour) => {
+      const key = slotKey(tutorId, dateStr, hour)
+      return slotStatus[key] !== undefined
+    })
 
   const filteredTutors =
     staffFilter === "all" ? tutors : tutors.filter((t) => t.tutor_id === staffFilter)
@@ -121,7 +156,11 @@ export function WeekAsDayGrids({
 
   return (
     <div className="space-y-6">
-      {days.map((day) => (
+      {days.map((day) => {
+        const tutorsForDay = filteredTutors.filter((tutor) =>
+          hasAnySlotForDay(tutor.tutor_id, day.date)
+        )
+        return (
         <Card key={day.date}>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -142,7 +181,7 @@ export function WeekAsDayGrids({
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTutors.map((tutor) => (
+                  {tutorsForDay.map((tutor) => (
                     <tr key={tutor.tutor_id}>
                       <td className="border border-gray-300 bg-gray-50 p-3 font-medium sticky left-0 z-10 shadow-md">
                         <div className="flex items-center gap-2">
@@ -180,7 +219,7 @@ export function WeekAsDayGrids({
             </div>
           </CardContent>
         </Card>
-      ))}
+      )})}
       {filteredTutors.length === 0 && (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">

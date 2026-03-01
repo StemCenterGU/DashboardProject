@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit, RateLimits } from '@/lib/rate-limit'
+import { logger, productionLogger } from '@/lib/logger'
 
 /**
  * Set user role (for initial admin setup).
@@ -8,8 +10,15 @@ import { createClient } from '@supabase/supabase-js'
  *
  * POST /api/admin/set-role
  * Body: { email: string, role: 'admin' | 'manager' | 'lead_tutor' | 'tutor' | 'developer' }
+ * Rate limited: 5 requests per minute
  */
 export async function POST(request: NextRequest) {
+  // Apply strict rate limiting
+  const rateLimitResult = rateLimit(request, RateLimits.strict)
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response!
+  }
+
   try {
     const { email, role } = await request.json()
     const emailNorm = email?.toString().toLowerCase().trim()
@@ -54,12 +63,21 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (updateError) {
-        console.error('Role update error:', updateError)
+        logger.error('Role update error:', updateError)
         return NextResponse.json(
           { error: 'Failed to update user role' },
           { status: 500 }
         )
       }
+
+      // Audit log role change
+      productionLogger.audit('role_change', user.user_id, {
+        email: emailNorm,
+        oldRole: user.role,
+        newRole: role,
+        timestamp: new Date().toISOString(),
+      })
+
       return NextResponse.json({
         success: true,
         message: `User role updated to ${role}`,
@@ -111,12 +129,20 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (insertError) {
-      console.error('Insert users row error:', insertError)
+      logger.error('Insert users row error:', insertError)
       return NextResponse.json(
         { error: 'User not in users table and failed to create row. Check DB constraint (e.g. developer role) and try again.' },
         { status: 500 }
       )
     }
+
+    // Audit log user creation with role
+    productionLogger.audit('user_created_with_role', authUser.id, {
+      email: emailNorm,
+      role,
+      createdFrom: 'auth',
+      timestamp: new Date().toISOString(),
+    })
 
     return NextResponse.json({
       success: true,

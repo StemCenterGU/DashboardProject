@@ -81,3 +81,36 @@ export async function requireAuth(): Promise<User> {
   return user
 }
 
+/**
+ * Check if user has one of the required roles
+ */
+export function hasRole(user: User, roles: string[]): boolean {
+  if (!user.role) return false
+  return roles.includes(user.role)
+}
+
+/**
+ * Require user to have one of the specified roles
+ */
+export async function requireRole(roles: string[]): Promise<User> {
+  const user = await requireAuth()
+  if (!hasRole(user, roles)) {
+    throw new Error('Insufficient permissions')
+  }
+  return user
+}
+
+/**
+ * Require admin or manager role
+ */
+export async function requireAdmin(): Promise<User> {
+  return requireRole(['admin', 'manager'])
+}
+
+/**
+ * Require developer role
+ */
+export async function requireDeveloper(): Promise<User> {
+  return requireRole(['developer'])
+}
+

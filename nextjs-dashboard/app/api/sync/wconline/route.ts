@@ -1,20 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { WCOnlineSyncService } from '@/lib/wconline-sync'
+import { requireAdmin } from '@/lib/auth'
+import { rateLimit, RateLimits } from '@/lib/rate-limit'
+import { productionLogger } from '@/lib/logger'
 
 /**
  * Sync WCOnline data to Supabase
- * 
+ *
  * POST /api/sync/wconline
- * 
+ * Requires: admin or manager role
+ * Rate limited: 2 requests per minute
+ *
  * Query parameters:
  * - date: YYYY-MM-DD format (optional, defaults to today)
- * 
+ *
  * Returns sync results with counts of synced items
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication (admin/manager only)
+    // Require admin/manager authentication
+    const currentUser = await requireAdmin()
+
+    // Apply very strict rate limiting (2 requests per minute)
+    const rateLimitResult = rateLimit(request, RateLimits.veryStrict, currentUser.user_id)
+    if (!rateLimitResult.success) {
+      return rateLimitResult.response!
+    }
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Unauthorized - admin or manager role required' },
+      { status: 401 }
+    )
+  }
+
+  try {
     const supabase = await createServerClient()
     if (!supabase) {
       return NextResponse.json(
@@ -22,9 +42,6 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       )
     }
-
-    // TODO: Add authentication check here
-    // For now, allow anyone (add auth later)
 
     // Get optional date parameter
     const searchParams = request.nextUrl.searchParams
@@ -47,10 +64,21 @@ export async function POST(request: NextRequest) {
     // Perform complete sync (AVAIL + CUSTOM)
     const result = await syncService.syncAll(syncDate)
 
+    // Audit log the sync operation
+    const currentUser = await requireAdmin()
+    productionLogger.audit('wconline_sync', currentUser.user_id, {
+      success: result.success,
+      date: dateParam || 'today',
+      appointments: result.appointments.synced,
+      availableSlots: result.availableSlots.synced,
+      tutors: result.tutors.synced,
+      courses: result.courses.synced,
+    })
+
     return NextResponse.json({
       success: result.success,
-      message: result.success 
-        ? 'Sync completed successfully' 
+      message: result.success
+        ? 'Sync completed successfully'
         : 'Sync completed with errors',
       results: {
         appointments: {
@@ -93,8 +121,19 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET endpoint to check sync status or test connection
+ * Requires: admin or manager role
  */
 export async function GET(request: NextRequest) {
+  try {
+    // Require admin/manager authentication
+    await requireAdmin()
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Unauthorized - admin or manager role required' },
+      { status: 401 }
+    )
+  }
+
   try {
     const supabase = await createServerClient()
     if (!supabase) {

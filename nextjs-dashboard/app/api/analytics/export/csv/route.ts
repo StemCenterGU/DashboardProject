@@ -1,8 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { SchedulingAnalytics } from '@/lib/analytics'
+import { requireAuth } from '@/lib/auth'
+import { rateLimit, RateLimits } from '@/lib/rate-limit'
+import { productionLogger } from '@/lib/logger'
 
+/**
+ * Export appointments data as CSV
+ * GET /api/analytics/export/csv
+ * Requires: Authentication
+ * Rate limited: 2 requests per minute
+ */
 export async function GET(request: NextRequest) {
+  try {
+    // Require authentication for data export
+    const currentUser = await requireAuth()
+
+    // Apply very strict rate limiting for exports (2 requests per minute)
+    const rateLimitResult = rateLimit(request, RateLimits.veryStrict, currentUser.user_id)
+    if (!rateLimitResult.success) {
+      return rateLimitResult.response!
+    }
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Unauthorized - authentication required' },
+      { status: 401 }
+    )
+  }
+
   try {
     const supabase = await createServerClient()
     if (!supabase) {
@@ -137,7 +162,15 @@ export async function GET(request: NextRequest) {
     // Generate filename with timestamp
     const timestamp = new Date().toISOString().split('T')[0]
     const filename = `appointments_export_${timestamp}.csv`
-    
+
+    // Audit log the export
+    const currentUser = await requireAuth()
+    productionLogger.audit('csv_export', currentUser.user_id, {
+      recordCount: appointments.length,
+      filename,
+      timestamp,
+    })
+
     return new NextResponse(csvContent, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',

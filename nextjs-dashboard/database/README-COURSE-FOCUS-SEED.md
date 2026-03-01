@@ -1,21 +1,33 @@
-# Course/Focus Options Seed Script
+# Course/Focus Options Seed (Course or Focus dropdown)
 
-This script adds all course and focus options to the `courses` table for the scheduling page dropdown.
+All course and focus options for the **Course or Focus** dropdown are stored in the `courses` table. The canonical list is in **`docs/courses-with-instructors.md`** (one bullet per option, with course and instructor).
 
-## How to Run
+## Option A: Generate from the list and run in Supabase (recommended)
 
-1. Open your Supabase Dashboard
-2. Navigate to SQL Editor
-3. Copy and paste the contents of `seed-course-focus-options.sql`
-4. Click "Run" to execute
+1. **Generate the SQL** from the markdown list (ensures dropdown and table stay in sync):
+   ```bash
+   node scripts/seed-courses-from-list.js
+   ```
+   This writes `database/seed-course-focus-from-list.sql` with one row per line in `docs/courses-with-instructors.md`.
 
-## What It Does
+2. **Run the generated SQL in Supabase**  
+   - Open Supabase → SQL Editor  
+   - Paste the contents of `database/seed-course-focus-from-list.sql`  
+   - Run it  
 
-- Inserts all course/focus options from the WCOnline system
-- Each option is stored as a separate row in the `courses` table
-- The full focus text (e.g., "ACCT305 Intermediate Fin Accounting I - Dr Renee Castrigano Only") is stored in `course_name`
-- Course codes are extracted when available (e.g., "ACCT305")
-- Entries with the same course code but different instructors will have `NULL` for `course_code` to avoid conflicts (since `course_code` has a UNIQUE constraint)
+   Rows that already exist (same `course_name`) are skipped, so you can re-run safely.
+
+## Option B: Run the hand-maintained seed
+
+1. Open Supabase → SQL Editor  
+2. Copy and paste the contents of `seed-course-focus-options.sql`  
+3. Click Run  
+
+## What gets inserted
+
+- Each option is one row in `courses` (e.g. "ACCT305 Intermediate Fin Accounting I - Dr Renee Castrigano Only" in `course_name`).
+- `course_code` is set for the first occurrence of each code (e.g. ACCT305); other rows for the same code use `NULL` (because `course_code` is UNIQUE).
+- All rows are inserted with `active = true`.
 
 ## Notes
 
