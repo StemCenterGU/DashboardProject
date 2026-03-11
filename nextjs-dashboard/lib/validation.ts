@@ -62,7 +62,8 @@ export const createAppointmentSchema = z.object({
   is_online: z.boolean().default(false),
   is_walk_in: z.boolean().default(false),
   is_missed: z.boolean().default(false),
-  notes: z.string().max(1000).optional(),
+  notes: z.string().max(2000).optional(),
+  attachment_path: z.string().max(500).optional(),
 }).refine(
   (data) => {
     // Validate that end_time is after start_time
@@ -71,6 +72,33 @@ export const createAppointmentSchema = z.object({
     const startMinutes = start[0] * 60 + start[1]
     const endMinutes = end[0] * 60 + end[1]
     return endMinutes > startMinutes
+  },
+  { message: 'End time must be after start time' }
+)
+
+// Appointment update schema
+export const updateAppointmentSchema = z.object({
+  appointment_id: z.string().min(1, 'Appointment ID is required'),
+  student_name: z.string().min(1).max(255).optional(),
+  student_email: emailSchema.optional().nullable(),
+  course_name: z.string().max(255).optional().nullable(),
+  course_code: z.string().max(50).optional().nullable(),
+  appointment_date: dateSchema.optional(),
+  start_time: timeSchema.optional(),
+  end_time: timeSchema.optional(),
+  notes: z.string().max(2000).optional().nullable(),
+  is_online: z.boolean().optional(),
+  status: appointmentStatusSchema.optional(),
+}).refine(
+  (data) => {
+    if (data.start_time && data.end_time) {
+      const start = data.start_time.split(':').map(Number)
+      const end = data.end_time.split(':').map(Number)
+      const startMinutes = start[0] * 60 + start[1]
+      const endMinutes = end[0] * 60 + end[1]
+      return endMinutes > startMinutes
+    }
+    return true
   },
   { message: 'End time must be after start time' }
 )

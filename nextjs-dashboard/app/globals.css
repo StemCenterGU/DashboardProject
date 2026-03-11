@@ -66,3 +66,69 @@ body[data-scroll-locked] {
   overscroll-behavior: auto !important;
 }
 
+/* Print styles - hide everything except the dialog content */
+@media print {
+  /* Hide everything by default */
+  body > *:not([data-radix-portal]) {
+    display: none !important;
+  }
+  
+  /* Hide sidebar, header, and main content */
+  aside, nav, header, footer, .sidebar {
+    display: none !important;
+  }
+  
+  /* Show the portal */
+  [data-radix-portal] {
+    position: static !important;
+    display: block !important;
+  }
+  
+  /* Hide the overlay */
+  [data-radix-dialog-overlay] {
+    display: none !important;
+  }
+  
+  /* Make the dialog content wrapper visible and properly positioned */
+  [role="dialog"] {
+    position: static !important;
+    transform: none !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+  
+  /* Ensure print content and all children are visible */
+  [data-print-content],
+  [data-print-content] * {
+    visibility: visible !important;
+  }
+  
+  [data-print-content] {
+    position: static !important;
+    transform: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: block !important;
+  }
+  
+  /* Hide buttons during print */
+  [data-print-content] button,
+  [data-print-content] [role="button"],
+  [data-print-content] footer {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Ensure proper page sizing */
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+}
+

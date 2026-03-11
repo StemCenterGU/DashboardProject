@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase-server"
 import { randomUUID } from "crypto"
 import { requireAuth } from "@/lib/auth"
-import { createAppointmentSchema, validateBody, appointmentQuerySchema, parseSearchParams } from "@/lib/validation"
+import { createAppointmentSchema, updateAppointmentSchema, validateBody, appointmentQuerySchema, parseSearchParams } from "@/lib/validation"
 
 /**
  * Create a new appointment
@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
       is_walk_in,
       is_missed,
       notes,
+      attachment_path,
     } = validation.data
 
     // Prevent booking appointments in the past
@@ -101,6 +102,7 @@ export async function POST(request: NextRequest) {
       is_walk_in,
       is_missed,
       notes: notes || null,
+      attachment_path: attachment_path || null,
     }
 
     const { data, error } = await supabase.from("appointments").insert(row).select("appointment_id").single()
@@ -195,6 +197,113 @@ export async function GET(request: NextRequest) {
       page,
       limit,
       totalPages
+    })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+/**
+ * Update an existing appointment
+ * PATCH /api/scheduling/appointments
+ * Requires: Authentication
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    await requireAuth()
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Unauthorized - authentication required" },
+      { status: 401 }
+    )
+  }
+
+  try {
+    const supabase = await createServerClient()
+    if (!supabase) {
+      return NextResponse.json({ error: "Database connection failed" }, { status: 500 })
+    }
+
+    const body = await request.json()
+
+    const validation = validateBody(body, updateAppointmentSchema)
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      )
+    }
+
+    const { appointment_id, ...updateFields } = validation.data
+
+    const updateData: Record<string, any> = {}
+
+    if (updateFields.student_name !== undefined) {
+      updateData.student_name = updateFields.student_name
+    }
+    if (updateFields.student_email !== undefined) {
+      updateData.student_email = updateFields.student_email
+    }
+    if (updateFields.course_name !== undefined) {
+      updateData.course_name = updateFields.course_name
+    }
+    if (updateFields.course_code !== undefined) {
+      updateData.course_code = updateFields.course_code
+    }
+    if (updateFields.appointment_date !== undefined) {
+      updateData.appointment_date = updateFields.appointment_date
+    }
+    if (updateFields.start_time !== undefined) {
+      updateData.start_time = updateFields.start_time.length === 5 
+        ? `${updateFields.start_time}:00` 
+        : updateFields.start_time
+    }
+    if (updateFields.end_time !== undefined) {
+      updateData.end_time = updateFields.end_time.length === 5 
+        ? `${updateFields.end_time}:00` 
+        : updateFields.end_time
+    }
+    if (updateFields.notes !== undefined) {
+      updateData.notes = updateFields.notes
+    }
+    if (updateFields.is_online !== undefined) {
+      updateData.is_online = updateFields.is_online
+    }
+    if (updateFields.status !== undefined) {
+      updateData.status = updateFields.status
+      if (updateFields.status === 'no_show' || updateFields.status === 'missed') {
+        updateData.is_missed = true
+      }
+    }
+
+    updateData.updated_at = new Date().toISOString()
+
+    if (Object.keys(updateData).length === 1) {
+      return NextResponse.json(
+        { error: "No fields to update" },
+        { status: 400 }
+      )
+    }
+
+    const { data, error } = await supabase
+      .from("appointments")
+      .update(updateData)
+      .eq("appointment_id", appointment_id)
+      .select("appointment_id, status")
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    if (!data) {
+      return NextResponse.json({ error: "Appointment not found" }, { status: 404 })
+    }
+
+    return NextResponse.json({ 
+      appointment_id: data.appointment_id, 
+      status: data.status,
+      updated: true 
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

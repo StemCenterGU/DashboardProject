@@ -13,9 +13,10 @@ import {
 import { Calendar, Clock, Users, BookOpen, Plus, Search, Loader2, ChevronDown } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, parseISO } from "date-fns"
-import { WeekAsDayGrids } from "@/components/week-as-day-grids"
+import { WeekAsDayGrids, AppointmentDetail } from "@/components/week-as-day-grids"
 import { TodayAppointments, UpcomingAppointments } from "@/components/scheduling"
 import { AppointmentBookingDialog } from "@/components/appointment-booking-dialog"
+import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog"
 
 interface Appointment {
   appointment_id: string
@@ -79,6 +80,7 @@ export default function SchedulingPage() {
   const [courseFilter, setCourseFilter] = useState<string>("all")
   const [meetingTypeFilter, setMeetingTypeFilter] = useState<string>("all")
   const scheduleDateInputRef = useRef<HTMLInputElement>(null)
+  const [scheduleRefreshKey, setScheduleRefreshKey] = useState(0)
 
   // Booking dialog state
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false)
@@ -87,6 +89,14 @@ export default function SchedulingPage() {
     tutorName: string
     date: string
     startTime: string
+  } | null>(null)
+
+  // Detail dialog state for viewing booked appointments
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [selectedAppointmentDetail, setSelectedAppointmentDetail] = useState<{
+    appointment: AppointmentDetail
+    tutorName: string
+    date: string
   } | null>(null)
 
   const normalizeFocusName = (label: string) => {
@@ -234,7 +244,7 @@ export default function SchedulingPage() {
   const goNextWeek = () => setSelectedScheduleDate(format(addWeeks(weekStart, 1), "yyyy-MM-dd"))
   const goCurrentWeek = () => setSelectedScheduleDate(today)
 
-  // Handle slot click from schedule grid
+  // Handle slot click from schedule grid (available slots)
   const handleSlotClick = (tutorId: string, tutorName: string, date: string, hour: number) => {
     // Convert hour to HH:MM format
     const startTime = `${String(hour).padStart(2, "0")}:00`
@@ -242,9 +252,18 @@ export default function SchedulingPage() {
     setBookingDialogOpen(true)
   }
 
+  // Handle booked slot click from schedule grid (view appointment details)
+  const handleBookedSlotClick = (appointment: AppointmentDetail, tutorName: string, date: string, hour: number) => {
+    setSelectedAppointmentDetail({ appointment, tutorName, date })
+    setDetailDialogOpen(true)
+  }
+
   // Handle successful booking
   const handleBookingSuccess = () => {
-    // Refresh today's appointments if the booking is for today
+    // Trigger schedule grid refresh
+    setScheduleRefreshKey(prev => prev + 1)
+
+    // Refresh appointments if on appointments tab
     if (activeTab === "appointments") {
       fetchTodayAppointments()
       fetchUpcomingAppointments(currentPage)
@@ -436,11 +455,13 @@ export default function SchedulingPage() {
 
           {/* All 7 days in previous single-day style: one table per day, same layout (date + time across top, tutors as rows), scrollable */}
           <WeekAsDayGrids
+            key={scheduleRefreshKey}
             weekStart={weekStartStr}
             staffFilter={staffFilter}
             courseFilter={courseFilter}
             meetingTypeFilter={meetingTypeFilter}
             onSlotClick={handleSlotClick}
+            onBookedSlotClick={handleBookedSlotClick}
           />
         </div>
       )}
@@ -566,6 +587,18 @@ export default function SchedulingPage() {
           date={selectedSlot.date}
           startTime={selectedSlot.startTime}
           onSuccess={handleBookingSuccess}
+        />
+      )}
+
+      {/* Appointment Detail Dialog (for viewing booked appointments) */}
+      {selectedAppointmentDetail && (
+        <AppointmentDetailDialog
+          open={detailDialogOpen}
+          onOpenChange={setDetailDialogOpen}
+          appointment={selectedAppointmentDetail.appointment}
+          tutorName={selectedAppointmentDetail.tutorName}
+          date={selectedAppointmentDetail.date}
+          onUpdate={handleBookingSuccess}
         />
       )}
     </div>

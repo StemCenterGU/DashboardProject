@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       supabase.from("tutor_availability").select("tutor_id, day_of_week, start_time, end_time").eq("is_available", true),
       supabase
         .from("appointments")
-        .select("tutor_id, appointment_date, start_time, end_time, status, is_online")
+        .select("appointment_id, tutor_id, tutor_name, appointment_date, start_time, end_time, status, is_online, is_walk_in, student_name, student_email, course_name, course_code, notes")
         .gte("appointment_date", startStr)
         .lte("appointment_date", endStr),
       supabase.from("courses").select("course_id, course_code, course_name").eq("active", true).order("course_name"),
@@ -109,10 +109,26 @@ export async function GET(request: NextRequest) {
     const courses = coursesRes.data || []
 
     type SlotStatus = "available" | "booked"
+    interface AppointmentDetail {
+      appointment_id: string
+      tutor_id: string
+      tutor_name: string | null
+      student_name: string
+      student_email: string | null
+      course_name: string | null
+      course_code: string | null
+      start_time: string
+      end_time: string
+      status: string
+      is_online: boolean | null
+      is_walk_in: boolean | null
+      notes: string | null
+    }
     const slotKey = (tutorId: string, dateStr: string, hour: number) =>
       `${tutorId}|${dateStr}|${hour}`
 
     const slotStatus: Record<string, SlotStatus> = {}
+    const slotAppointments: Record<string, AppointmentDetail> = {}
 
     for (const tutor of tutors) {
       for (let d = 0; d < 6; d++) {
@@ -141,7 +157,7 @@ export async function GET(request: NextRequest) {
             if (meetingType === "face_to_face") return apt.is_online !== true
             return true
           }
-          const booked = appointments.some(
+          const bookedAppointment = appointments.find(
             (apt) =>
               apt.tutor_id === tutor.tutor_id &&
               apt.appointment_date === dateStr &&
@@ -154,8 +170,26 @@ export async function GET(request: NextRequest) {
               })()
           )
 
-          if (booked) slotStatus[key] = "booked"
-          else if (inAvailability) slotStatus[key] = "available"
+          if (bookedAppointment) {
+            slotStatus[key] = "booked"
+            slotAppointments[key] = {
+              appointment_id: bookedAppointment.appointment_id,
+              tutor_id: bookedAppointment.tutor_id,
+              tutor_name: bookedAppointment.tutor_name,
+              student_name: bookedAppointment.student_name,
+              student_email: bookedAppointment.student_email,
+              course_name: bookedAppointment.course_name,
+              course_code: bookedAppointment.course_code,
+              start_time: bookedAppointment.start_time,
+              end_time: bookedAppointment.end_time,
+              status: bookedAppointment.status,
+              is_online: bookedAppointment.is_online,
+              is_walk_in: bookedAppointment.is_walk_in,
+              notes: bookedAppointment.notes,
+            }
+          } else if (inAvailability) {
+            slotStatus[key] = "available"
+          }
         }
       }
     }
@@ -168,11 +202,18 @@ export async function GET(request: NextRequest) {
     const hours = Array.from({ length: HOUR_END - HOUR_START + 1 }, (_, i) => HOUR_START + i)
 
     let finalSlotStatus = slotStatus
+    let finalSlotAppointments = slotAppointments
     if (allowedTutorIds) {
       finalSlotStatus = {} as Record<string, SlotStatus>
+      finalSlotAppointments = {} as Record<string, AppointmentDetail>
       for (const key of Object.keys(slotStatus)) {
         const tutorId = key.split("|")[0]
-        if (allowedTutorIds.has(tutorId)) finalSlotStatus[key] = slotStatus[key]
+        if (allowedTutorIds.has(tutorId)) {
+          finalSlotStatus[key] = slotStatus[key]
+          if (slotAppointments[key]) {
+            finalSlotAppointments[key] = slotAppointments[key]
+          }
+        }
       }
     }
 
@@ -185,6 +226,7 @@ export async function GET(request: NextRequest) {
       days,
       hours,
       slotStatus: finalSlotStatus,
+      slotAppointments: finalSlotAppointments,
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

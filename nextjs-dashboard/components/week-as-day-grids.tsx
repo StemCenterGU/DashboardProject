@@ -35,6 +35,22 @@ interface Day {
   dayOfWeek: number
 }
 
+export interface AppointmentDetail {
+  appointment_id: string
+  tutor_id: string
+  tutor_name: string | null
+  student_name: string
+  student_email: string | null
+  course_name: string | null
+  course_code: string | null
+  start_time: string
+  end_time: string
+  status: string
+  is_online: boolean | null
+  is_walk_in: boolean | null
+  notes: string | null
+}
+
 interface WeekData {
   week_start: string
   week_end: string
@@ -43,6 +59,7 @@ interface WeekData {
   days: Day[]
   hours: number[]
   slotStatus: Record<string, "available" | "booked">
+  slotAppointments: Record<string, AppointmentDetail>
 }
 
 interface WeekAsDayGridsProps {
@@ -52,6 +69,7 @@ interface WeekAsDayGridsProps {
   meetingTypeFilter?: string
   apiPath?: string
   onSlotClick?: (tutorId: string, tutorName: string, date: string, hour: number) => void
+  onBookedSlotClick?: (appointment: AppointmentDetail, tutorName: string, date: string, hour: number) => void
 }
 
 const slotKey = (tutorId: string, dateStr: string, hour: number) =>
@@ -64,6 +82,7 @@ export function WeekAsDayGrids({
   meetingTypeFilter = "all",
   apiPath = "/api/scheduling/schedule-week",
   onSlotClick,
+  onBookedSlotClick,
 }: WeekAsDayGridsProps) {
   const [data, setData] = useState<WeekData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -122,6 +141,7 @@ export function WeekAsDayGrids({
   const days = data?.days ?? []
   const hours = data?.hours ?? []
   const slotStatus = data?.slotStatus ?? {}
+  const slotAppointments = data?.slotAppointments ?? {}
 
   // Does this tutor have any slot (available or booked) on this day?
   const hasAnySlotForDay = (tutorId: string, dateStr: string) =>
@@ -221,7 +241,7 @@ export function WeekAsDayGrids({
                         let title = isAvailable
                           ? `Available - ${formatTimeLabel(hour)}`
                           : isBooked
-                            ? "Booked"
+                            ? `Booked - ${slotAppointments[key]?.student_name ?? "Click for details"}`
                             : "Not available"
 
                         // Update title for past slots
@@ -232,6 +252,11 @@ export function WeekAsDayGrids({
                         const handleClick = () => {
                           if (isAvailable && !isPast && onSlotClick) {
                             onSlotClick(tutor.tutor_id, tutor.tutor_name, day.date, hour)
+                          } else if (isBooked && onBookedSlotClick) {
+                            const appointment = slotAppointments[key]
+                            if (appointment) {
+                              onBookedSlotClick(appointment, tutor.tutor_name, day.date, hour)
+                            }
                           }
                         }
 

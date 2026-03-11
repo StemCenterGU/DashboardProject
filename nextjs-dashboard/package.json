@@ -11,6 +11,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
+    "test": "bash test-runner.sh",
+    "typecheck": "tsc --noEmit",
     "set-admin": "node scripts/utils/set-admin-role.js",
     "set-developer": "node scripts/utils/set-developer-role.js"
   },

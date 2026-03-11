@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     course_instructor VARCHAR(255), -- Course instructor from WCOnline (extracted from focus field)
     course_code VARCHAR(50), -- Course code (stored directly for reference)
     course_name VARCHAR(255), -- Course name (stored directly for reference, extracted from focus field)
+    attachment_path TEXT, -- Storage path in Supabase Storage bucket "appointment-attachments"
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
