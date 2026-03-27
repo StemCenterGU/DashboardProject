@@ -46,6 +46,13 @@ export const userRoleSchema = z.enum([
   'developer',
 ])
 
+// Recurrence pattern schema
+export const recurrencePatternSchema = z.object({
+  frequency: z.enum(['daily', 'weekly']),
+  daysOfWeek: z.array(z.number().int().min(0).max(6)).optional(), // For weekly recurrence
+  interval: z.number().int().positive().optional(), // e.g., every 2 weeks
+})
+
 // Appointment creation schema
 export const createAppointmentSchema = z.object({
   tutor_id: uuidSchema,
@@ -62,8 +69,14 @@ export const createAppointmentSchema = z.object({
   is_online: z.boolean().default(false),
   is_walk_in: z.boolean().default(false),
   is_missed: z.boolean().default(false),
+  is_placeholder: z.boolean().default(false),
+  is_no_show: z.boolean().default(false),
+  notify_client: z.boolean().default(false),
   notes: z.string().max(2000).optional(),
   attachment_path: z.string().max(500).optional(),
+  recurrence_pattern: z.string().optional(), // JSON string of RecurrencePattern
+  recurrence_end_date: dateSchema.optional(),
+  parent_appointment_id: z.string().optional(),
 }).refine(
   (data) => {
     // Validate that end_time is after start_time
@@ -74,6 +87,24 @@ export const createAppointmentSchema = z.object({
     return endMinutes > startMinutes
   },
   { message: 'End time must be after start time' }
+).refine(
+  (data) => {
+    // If recurrence_pattern exists, recurrence_end_date must also exist
+    if (data.recurrence_pattern && !data.recurrence_end_date) {
+      return false
+    }
+    return true
+  },
+  { message: 'Recurrence end date is required when creating recurring appointments' }
+).refine(
+  (data) => {
+    // If recurrence_end_date exists, it must be after appointment_date
+    if (data.recurrence_end_date) {
+      return new Date(data.recurrence_end_date) > new Date(data.appointment_date)
+    }
+    return true
+  },
+  { message: 'Recurrence end date must be after appointment start date' }
 )
 
 // Appointment update schema

@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, Paperclip, X } from "lucide-react"
+import { Loader2, Paperclip, X, Repeat } from "lucide-react"
+import { User, RecurrencePattern } from "@/types"
+import { RecurringAppointmentDialog } from "@/components/recurring-appointment-dialog"
 
 interface FocusOption {
   focus_id: string
@@ -66,6 +68,20 @@ export function AppointmentBookingDialog({
   const [courseFocus, setCourseFocus] = useState("")
   const [focusOptions, setFocusOptions] = useState<FocusOption[]>([])
 
+  // Administrative options
+  const [isWalkIn, setIsWalkIn] = useState(false)
+  const [isNoShow, setIsNoShow] = useState(false)
+  const [isPlaceholder, setIsPlaceholder] = useState(false)
+  const [notifyClient, setNotifyClient] = useState(false)
+
+  // User role for access control
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+
+  // Recurring appointments
+  const [showRecurringDialog, setShowRecurringDialog] = useState(false)
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern | null>(null)
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState<string | null>(null)
+
   // Fetch focus options when dialog opens
   useEffect(() => {
     if (open) {
@@ -73,6 +89,16 @@ export function AppointmentBookingDialog({
         .then((res) => res.ok ? res.json() : { options: [] })
         .then((data) => setFocusOptions(data.options ?? []))
         .catch(() => setFocusOptions([]))
+    }
+  }, [open])
+
+  // Fetch current user for role-based access control
+  useEffect(() => {
+    if (open) {
+      fetch("/api/user-info")
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => setCurrentUser(data))
+        .catch(() => setCurrentUser(null))
     }
   }, [open])
 
@@ -85,6 +111,11 @@ export function AppointmentBookingDialog({
       setEndTime(`${String(endHours).padStart(2, "0")}:${String(endMinutes).padStart(2, "0")}`)
     }
   }, [startTime])
+
+  const handleApplyRecurrence = (pattern: RecurrencePattern, endDate: string) => {
+    setRecurrencePattern(pattern)
+    setRecurrenceEndDate(endDate)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -177,9 +208,14 @@ export function AppointmentBookingDialog({
           end_time: endTime,
           status: "scheduled",
           is_online: meetingType === "online",
-          is_walk_in: false,
+          is_walk_in: isWalkIn,
+          is_placeholder: isPlaceholder,
+          is_no_show: isNoShow,
+          notify_client: notifyClient,
           notes: detailedNotes,
           attachment_path: attachmentPath,
+          recurrence_pattern: recurrencePattern ? JSON.stringify(recurrencePattern) : undefined,
+          recurrence_end_date: recurrenceEndDate || undefined,
         }),
       })
 
@@ -209,6 +245,12 @@ export function AppointmentBookingDialog({
       setCourseFocus("")
       setSelectedFile(null)
       setUploadError(null)
+      setIsWalkIn(false)
+      setIsNoShow(false)
+      setIsPlaceholder(false)
+      setNotifyClient(false)
+      setRecurrencePattern(null)
+      setRecurrenceEndDate(null)
       onOpenChange(false)
 
       if (onSuccess) {
@@ -279,7 +321,7 @@ export function AppointmentBookingDialog({
           {/* Date/Time Section */}
           <div className="border rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
-              <div>
+              <div className="flex-1">
                 <p className="text-lg font-bold">
                   {formatDate(date)} | {formatTime(startTime)} to{" "}
                   <select
@@ -304,6 +346,15 @@ export function AppointmentBookingDialog({
                 </p>
                 <p className="text-sm text-gray-600">{tutorName} | STEM Center</p>
               </div>
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => setShowRecurringDialog(true)}
+                className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              >
+                <Repeat className="h-4 w-4" />
+                Repeating Options
+              </Button>
             </div>
             <div className="p-3 bg-blue-50 border-2 border-blue-600 rounded">
               <p className="font-semibold">APPOINTMENT LIMITS: <span className="font-normal">Appointments must be 1 hour in length.</span></p>
@@ -506,61 +557,6 @@ export function AppointmentBookingDialog({
                 </select>
               </div>
 
-              {/* File Attachment */}
-              <div>
-                <Label className="font-semibold">
-                  Attach a file to share with your tutor{" "}
-                  <span className="font-normal text-gray-500">(optional — PDF, Word, Excel, images, up to 10 MB)</span>
-                </Label>
-                <div className="mt-2">
-                  {selectedFile ? (
-                    <div className="flex items-center gap-2 p-2 border rounded bg-blue-50">
-                      <Paperclip className="h-4 w-4 text-blue-600 shrink-0" />
-                      <span className="text-sm truncate flex-1">{selectedFile.name}</span>
-                      <span className="text-xs text-gray-500 shrink-0">
-                        {(selectedFile.size / 1024).toFixed(0)} KB
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedFile(null)
-                          setUploadError(null)
-                          if (fileInputRef.current) fileInputRef.current.value = ""
-                        }}
-                        className="text-gray-400 hover:text-red-500"
-                        aria-label="Remove file"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="flex items-center gap-2 w-fit px-3 py-2 border rounded cursor-pointer hover:bg-gray-50 text-sm">
-                      <Paperclip className="h-4 w-4 text-gray-500" />
-                      <span>Choose file</span>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        className="hidden"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.gif,.webp"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0] ?? null
-                          setUploadError(null)
-                          if (f && f.size > 10 * 1024 * 1024) {
-                            setUploadError("File too large. Maximum size is 10 MB.")
-                            e.target.value = ""
-                            return
-                          }
-                          setSelectedFile(f)
-                        }}
-                      />
-                    </label>
-                  )}
-                  {uploadError && (
-                    <p className="text-sm text-red-600 mt-1">{uploadError}</p>
-                  )}
-                </div>
-              </div>
-
               {/* Notes */}
               <div>
                 <Label htmlFor="notes">
@@ -575,6 +571,114 @@ export function AppointmentBookingDialog({
                   maxLength={1000}
                 />
               </div>
+            </div>
+          </div>
+
+          {/* File Attachments Section */}
+          <div className="border rounded-lg p-4">
+            <h3 className="text-lg font-semibold mb-2">File Attachments</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              To attach files to this appointment, use the options below. <strong>File attachments must be 5 MB or less and in one of the following formats: .doc, .docx, .numbers, .odt, .pages, .pdf, .rtf, .txt, .wpd, .xls, .xlsx.</strong> If making a repeating appointment, files will only be attached to the first (this) appointment.
+            </p>
+            <div>
+              <Label className="font-semibold mb-2 block">Files</Label>
+              {selectedFile ? (
+                <div className="flex items-center gap-2 p-2 border rounded bg-blue-50">
+                  <Paperclip className="h-4 w-4 text-blue-600 shrink-0" />
+                  <span className="text-sm truncate flex-1">{selectedFile.name}</span>
+                  <span className="text-xs text-gray-500 shrink-0">
+                    {(selectedFile.size / 1024).toFixed(0)} KB
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedFile(null)
+                      setUploadError(null)
+                      if (fileInputRef.current) fileInputRef.current.value = ""
+                    }}
+                    className="text-gray-400 hover:text-red-500"
+                    aria-label="Remove file"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="inline-flex items-center gap-2 px-4 py-2 border rounded cursor-pointer hover:bg-gray-50 bg-white">
+                  <span className="text-sm font-medium">Choose Files</span>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.numbers,.odt,.pages,.rtf,.wpd"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null
+                      setUploadError(null)
+                      if (f && f.size > 5 * 1024 * 1024) {
+                        setUploadError("File too large. Maximum size is 5 MB.")
+                        e.target.value = ""
+                        return
+                      }
+                      setSelectedFile(f)
+                    }}
+                  />
+                </label>
+              )}
+              {!selectedFile && <span className="text-sm text-gray-500 ml-2">No file chosen</span>}
+              {uploadError && (
+                <p className="text-sm text-red-600 mt-2">{uploadError}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Administrative Options Section */}
+          <div className="border-2 border-red-300 bg-red-50 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-red-700 mb-3">Administrative Options</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Walk-In / Drop-In - Available to all users */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isWalkIn}
+                  onChange={(e) => setIsWalkIn(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">Walk-In / Drop-In</span>
+              </label>
+
+              {/* No-Show / Missed - Admin/Manager/Lead Tutor only */}
+              {currentUser && ['admin', 'manager', 'lead_tutor'].includes(currentUser.role) && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isNoShow}
+                    onChange={(e) => setIsNoShow(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">No-Show / Missed</span>
+                </label>
+              )}
+
+              {/* Placeholder - Available to all users */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isPlaceholder}
+                  onChange={(e) => setIsPlaceholder(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">Placeholder</span>
+              </label>
+
+              {/* Notify Client - Available to all users */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={notifyClient}
+                  onChange={(e) => setNotifyClient(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm">Notify Client</span>
+              </label>
             </div>
           </div>
 
@@ -611,6 +715,14 @@ export function AppointmentBookingDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {/* Recurring Appointment Dialog */}
+      <RecurringAppointmentDialog
+        open={showRecurringDialog}
+        onOpenChange={setShowRecurringDialog}
+        startDate={date}
+        onApply={handleApplyRecurrence}
+      />
     </Dialog>
   )
 }

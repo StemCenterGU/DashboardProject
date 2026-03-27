@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase-server"
 import { randomUUID } from "crypto"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, getCurrentUser } from "@/lib/auth"
 import { createAppointmentSchema, updateAppointmentSchema, validateBody, appointmentQuerySchema, parseSearchParams } from "@/lib/validation"
+import { RecurrencePattern } from "@/types"
 
 /**
  * Create a new appointment
@@ -52,9 +53,28 @@ export async function POST(request: NextRequest) {
       is_online,
       is_walk_in,
       is_missed,
+      is_placeholder,
+      is_no_show,
+      notify_client,
       notes,
       attachment_path,
+      recurrence_pattern,
+      recurrence_end_date,
     } = validation.data
+
+    // Get current user for role-based validation
+    const currentUser = await getCurrentUser()
+
+    // Validate admin-only fields
+    if (is_no_show && currentUser) {
+      const isAdmin = ['admin', 'manager', 'lead_tutor'].includes(currentUser.role)
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: "Only admins, managers, and lead tutors can mark appointments as no-show" },
+          { status: 403 }
+        )
+      }
+    }
 
     // Prevent booking appointments in the past
     const today = new Date()
@@ -83,35 +103,150 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const appointment_id = `replica-${randomUUID()}`
-    const row = {
-      appointment_id,
-      tutor_id,
-      tutor_name: tutor_name || null,
-      student_name,
-      student_email: student_email || null,
-      course_id: course_id || null,
-      course_name: course_name || null,
-      course_code: course_code || null,
-      appointment_date,
-      start_time: start_time.length === 5 ? `${start_time}:00` : start_time,
-      end_time: end_time.length === 5 ? `${end_time}:00` : end_time,
-      status, // Already validated by schema
-      source: "replica",
-      is_online,
-      is_walk_in,
-      is_missed,
-      notes: notes || null,
-      attachment_path: attachment_path || null,
+    // Generate appointments (single or recurring)
+    const appointmentsToCreate: any[] = []
+    const parent_appointment_id = `replica-${randomUUID()}`
+
+    if (recurrence_pattern && recurrence_end_date) {
+      // Parse recurrence pattern
+      const pattern: RecurrencePattern = JSON.parse(recurrence_pattern)
+      const startDate = new Date(appointment_date + "T00:00:00")
+      const endDate = new Date(recurrence_end_date + "T00:00:00")
+
+      if (pattern.frequency === "daily") {
+        // Create daily appointments
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString().split("T")[0]
+          appointmentsToCreate.push({
+            appointment_id: `replica-${randomUUID()}`,
+            tutor_id,
+            tutor_name: tutor_name || null,
+            student_name,
+            student_email: student_email || null,
+            course_id: course_id || null,
+            course_name: course_name || null,
+            course_code: course_code || null,
+            appointment_date: dateStr,
+            start_time: start_time.length === 5 ? `${start_time}:00` : start_time,
+            end_time: end_time.length === 5 ? `${end_time}:00` : end_time,
+            status,
+            source: "replica",
+            is_online,
+            is_walk_in,
+            is_missed,
+            is_placeholder,
+            is_no_show,
+            notify_client,
+            notes: notes || null,
+            attachment_path: dateStr === appointment_date ? (attachment_path || null) : null, // Only first appointment gets attachment
+            is_repeating: true,
+            recurrence_pattern,
+            recurrence_end_date,
+            parent_appointment_id,
+          })
+        }
+      } else if (pattern.frequency === "weekly" && pattern.daysOfWeek) {
+        // Create weekly appointments on selected days
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+          const dayOfWeek = d.getDay()
+          if (pattern.daysOfWeek.includes(dayOfWeek)) {
+            const dateStr = d.toISOString().split("T")[0]
+            appointmentsToCreate.push({
+              appointment_id: `replica-${randomUUID()}`,
+              tutor_id,
+              tutor_name: tutor_name || null,
+              student_name,
+              student_email: student_email || null,
+              course_id: course_id || null,
+              course_name: course_name || null,
+              course_code: course_code || null,
+              appointment_date: dateStr,
+              start_time: start_time.length === 5 ? `${start_time}:00` : start_time,
+              end_time: end_time.length === 5 ? `${end_time}:00` : end_time,
+              status,
+              source: "replica",
+              is_online,
+              is_walk_in,
+              is_missed,
+              is_placeholder,
+              is_no_show,
+              notify_client,
+              notes: notes || null,
+              attachment_path: dateStr === appointment_date ? (attachment_path || null) : null, // Only first appointment gets attachment
+              is_repeating: true,
+              recurrence_pattern,
+              recurrence_end_date,
+              parent_appointment_id,
+            })
+          }
+        }
+      }
+    } else {
+      // Single appointment
+      appointmentsToCreate.push({
+        appointment_id: parent_appointment_id,
+        tutor_id,
+        tutor_name: tutor_name || null,
+        student_name,
+        student_email: student_email || null,
+        course_id: course_id || null,
+        course_name: course_name || null,
+        course_code: course_code || null,
+        appointment_date,
+        start_time: start_time.length === 5 ? `${start_time}:00` : start_time,
+        end_time: end_time.length === 5 ? `${end_time}:00` : end_time,
+        status,
+        source: "replica",
+        is_online,
+        is_walk_in,
+        is_missed,
+        is_placeholder,
+        is_no_show,
+        notify_client,
+        notes: notes || null,
+        attachment_path: attachment_path || null,
+        is_repeating: false,
+      })
     }
 
-    const { data, error } = await supabase.from("appointments").insert(row).select("appointment_id").single()
+    // Insert all appointments
+    const { data, error } = await supabase
+      .from("appointments")
+      .insert(appointmentsToCreate)
+      .select("appointment_id")
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ appointment_id: data?.appointment_id ?? appointment_id, created: true })
+    // Send email notification if requested
+    if (notify_client && student_email) {
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/api/notifications/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: student_email,
+            student_name,
+            tutor_name: tutor_name || "Your Tutor",
+            appointment_date,
+            start_time,
+            end_time,
+            is_online,
+          }),
+        })
+      } catch (emailError) {
+        console.error("Email notification failed:", emailError)
+        // Don't fail the appointment creation if email fails
+      }
+    }
+
+    return NextResponse.json({
+      appointment_id: parent_appointment_id,
+      created: true,
+      count: appointmentsToCreate.length,
+      recurring: recurrence_pattern ? true : false,
+    })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

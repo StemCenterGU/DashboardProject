@@ -1,8 +1,10 @@
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // Server-side Supabase client (for use in server components and API routes)
 // Returns null if Supabase is not configured, allowing the app to work without it
@@ -30,6 +32,21 @@ export async function createServerClient() {
         }
       },
     },
+  })
+}
+
+// Admin client that bypasses RLS policies (use with caution)
+export function createAdminClient() {
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    console.error('Missing Supabase URL or Service Role Key for admin client')
+    return null
+  }
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
   })
 }
 

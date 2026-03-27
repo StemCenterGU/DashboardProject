@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { LogOut, User, Settings, Code2, Users } from "lucide-react"
+import { LogOut, User, Settings, Code2, Users, CalendarClock } from "lucide-react"
 
 export function Navbar() {
   const router = useRouter()
@@ -109,6 +109,10 @@ export function Navbar() {
             </Link>
             <Link href="/calendar" className="text-sm font-medium text-muted-foreground hover:text-foreground">
               Calendar
+            </Link>
+            <Link href="/tutor-schedules" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
+              <CalendarClock className="h-4 w-4" />
+              Tutor Schedules
             </Link>
             {(user?.role === "admin" || user?.role === "manager") && (
               <Link href="/users" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">

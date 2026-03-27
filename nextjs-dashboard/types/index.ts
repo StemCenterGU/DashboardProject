@@ -57,6 +57,12 @@ export interface TutorAvailability {
 
 export type AppointmentStatus = 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'missed' | 'no_show'
 
+export interface RecurrencePattern {
+  frequency: 'daily' | 'weekly'
+  daysOfWeek?: number[] // 0 = Sunday, 6 = Saturday (for weekly)
+  interval?: number // e.g., every 2 weeks
+}
+
 export interface Appointment {
   appointment_id: string
   tutor_id: string
@@ -75,6 +81,13 @@ export interface Appointment {
   is_walk_in?: boolean
   is_missed?: boolean
   is_repeating?: boolean
+  is_placeholder?: boolean
+  is_no_show?: boolean
+  notify_client?: boolean
+  attachment_path?: string
+  recurrence_pattern?: string // JSON string of RecurrencePattern
+  recurrence_end_date?: string
+  parent_appointment_id?: string
   source?: string
   created_at?: string
 }
