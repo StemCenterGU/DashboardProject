@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase-server"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, getUserTutor, hasPermissionCheck } from "@/lib/auth"
 
 /**
  * Create a new availability slot
  * POST /api/schedule/slot
- * Requires: Authentication
+ * Requires: Authentication + (own slot OR lead_tutor+ role)
  */
 export async function POST(request: NextRequest) {
+  let user
   try {
     // Require authentication
-    await requireAuth()
+    user = await requireAuth()
   } catch (error) {
     return NextResponse.json(
       { error: "Unauthorized - authentication required" },
@@ -26,6 +27,28 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { tutor_id, day_of_week, start_time, end_time } = body
+
+    // Check permissions: user must be creating for themselves OR have edit_all_schedules permission
+    const canEditAll = hasPermissionCheck(user, 'EDIT_ALL_SCHEDULES')
+
+    if (!canEditAll) {
+      // Regular tutor - verify they're creating for their own profile
+      const tutorInfo = await getUserTutor(user.user_id)
+
+      if (!tutorInfo) {
+        return NextResponse.json(
+          { error: "No tutor profile found for this user" },
+          { status: 403 }
+        )
+      }
+
+      if (tutor_id !== tutorInfo.tutor_id) {
+        return NextResponse.json(
+          { error: "Permission denied - you can only create slots for your own schedule" },
+          { status: 403 }
+        )
+      }
+    }
 
     // Validation
     if (!tutor_id || day_of_week === undefined || !start_time || !end_time) {

@@ -114,6 +114,12 @@ export function Navbar() {
               <CalendarClock className="h-4 w-4" />
               Tutor Schedules
             </Link>
+            {(user?.role === "admin" || user?.role === "developer") && (
+              <Link href="/admin/users" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                User Management
+              </Link>
+            )}
             {(user?.role === "admin" || user?.role === "manager") && (
               <Link href="/users" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
                 <Users className="h-4 w-4" />

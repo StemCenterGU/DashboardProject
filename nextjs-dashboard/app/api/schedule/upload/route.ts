@@ -70,33 +70,48 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get or create tutors
-    const tutorIdMap: Record<string, string> = {} // tutorName -> UUID
+    // Match tutors by username (from Excel file)
+    const tutorIdMap: Record<string, string> = {} // username -> UUID
+    const unmatchedUsernames: string[] = []
+    const createdTutors: string[] = []
 
-    for (const tutorName of parseResult.tutors) {
-      // Check if tutor exists
+    for (const tutorUsername of parseResult.tutors) {
+      // Check if tutor exists by username
       const { data: existingTutor } = await supabase
         .from("tutors")
-        .select("tutor_id, tutor_name")
-        .eq("tutor_name", tutorName)
+        .select("tutor_id, tutor_name, username")
+        .eq("username", tutorUsername)
         .single()
 
       if (existingTutor) {
-        tutorIdMap[tutorName] = existingTutor.tutor_id
+        tutorIdMap[tutorUsername] = existingTutor.tutor_id
+        console.log(`Matched username "${tutorUsername}" to tutor "${existingTutor.tutor_name}" (${existingTutor.tutor_id})`)
       } else {
+        // Username not found - create new tutor
+        console.warn(`Username not found in database: ${tutorUsername}, creating new tutor...`)
+
+        // Use username as tutor_name for now (can be updated manually later)
+        const tutorName = tutorUsername
+
         // Create new tutor
-        const { data: newTutor, error } = await supabase
+        const { data: newTutor, error: createError } = await supabase
           .from("tutors")
-          .insert({ tutor_name: tutorName })
-          .select("tutor_id, tutor_name")
+          .insert({
+            tutor_name: tutorName,
+            username: tutorUsername,
+            role: 'tutor'
+          })
+          .select("tutor_id, tutor_name, username")
           .single()
 
-        if (error || !newTutor) {
-          console.error(`Failed to create tutor ${tutorName}:`, error)
-          continue
+        if (createError) {
+          console.error(`Failed to create tutor for username ${tutorUsername}:`, createError)
+          unmatchedUsernames.push(tutorUsername)
+        } else if (newTutor) {
+          tutorIdMap[tutorUsername] = newTutor.tutor_id
+          createdTutors.push(tutorUsername)
+          console.log(`Created new tutor "${newTutor.tutor_name}" for username "${tutorUsername}"`)
         }
-
-        tutorIdMap[tutorName] = newTutor.tutor_id
       }
     }
 
@@ -147,12 +162,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Add warnings for unmatched usernames and info about created tutors
+    const allWarnings = [...parseResult.warnings]
+    if (createdTutors.length > 0) {
+      allWarnings.push(
+        `${createdTutors.length} new tutor(s) created: ${createdTutors.join(', ')}`
+      )
+    }
+    if (unmatchedUsernames.length > 0) {
+      allWarnings.push(
+        `${unmatchedUsernames.length} username(s) failed to create: ${unmatchedUsernames.join(', ')}`
+      )
+    }
+
     return NextResponse.json({
       success: true,
-      tutorsUpdated: parseResult.tutors.length,
+      tutorsMatched: Object.keys(tutorIdMap).length - createdTutors.length,
+      tutorsCreated: createdTutors.length,
+      tutorsNotMatched: unmatchedUsernames.length,
       slotsCreated: insertedSlots?.length || 0,
       tutors: parseResult.tutors,
-      warnings: parseResult.warnings,
+      matchedTutors: Object.keys(tutorIdMap).filter(u => !createdTutors.includes(u)),
+      createdTutors,
+      unmatchedUsernames,
+      warnings: allWarnings,
     })
 
   } catch (error: any) {

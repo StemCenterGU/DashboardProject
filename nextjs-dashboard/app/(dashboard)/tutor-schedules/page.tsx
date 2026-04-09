@@ -3,10 +3,14 @@
 import { useState, useEffect } from "react"
 import { UploadSection } from "@/components/schedule/UploadSection"
 import { TutorScheduleView } from "@/components/schedule/TutorScheduleView"
+import LeadTutorSchedulesView from "@/components/schedule/LeadTutorSchedulesView"
 import { Input } from "@/components/ui/input"
-import { Loader2, Search, RefreshCw, Zap, Filter } from "lucide-react"
+import { Loader2, Search, RefreshCw, Zap, Filter, User, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { useUser } from "@/contexts/AuthContext"
+import { hasPermission } from "@/lib/roles"
 
 interface TutorSchedule {
   tutorId: string
@@ -22,13 +26,31 @@ export default function TutorSchedulesPage() {
   const [reprocessing, setReprocessing] = useState(false)
   const [deduplicating, setDeduplicating] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [activeTab, setActiveTab] = useState("accordion")
+  const [viewMode, setViewMode] = useState<'own' | 'all'>('own')
+  const [canViewAll, setCanViewAll] = useState(false)
   const { toast } = useToast()
+  const { user, role, isLoading: authLoading } = useUser()
 
-  // Fetch schedules
+  // Check if user can view all schedules
+  useEffect(() => {
+    if (role) {
+      const hasViewAllPermission = hasPermission(role, 'VIEW_ALL_SCHEDULES')
+      setCanViewAll(hasViewAllPermission)
+      // Default to 'all' for users with permission, 'own' for regular tutors
+      if (hasViewAllPermission) {
+        setViewMode('all')
+      }
+    }
+  }, [role])
+
+  // Fetch schedules with viewMode parameter
   const fetchSchedules = async () => {
     setLoading(true)
     try {
-      const response = await fetch("/api/schedule")
+      // Build API URL with viewMode parameter
+      const url = `/api/schedule?viewMode=${viewMode}`
+      const response = await fetch(url)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -41,6 +63,11 @@ export default function TutorSchedulesPage() {
 
       setSchedules(data.schedules || [])
       setFilteredSchedules(data.schedules || [])
+
+      // Update canViewAll based on API response
+      if (data.canViewAll !== undefined) {
+        setCanViewAll(data.canViewAll)
+      }
     } catch (error: any) {
       console.error("Fetch schedules error:", error) // Debug log
       toast({
@@ -53,10 +80,12 @@ export default function TutorSchedulesPage() {
     }
   }
 
-  // Initial load
+  // Fetch schedules when viewMode changes
   useEffect(() => {
-    fetchSchedules()
-  }, [])
+    if (!authLoading) {
+      fetchSchedules()
+    }
+  }, [viewMode, authLoading])
 
   // Filter schedules by search query
   useEffect(() => {
@@ -74,10 +103,28 @@ export default function TutorSchedulesPage() {
   }, [searchQuery, schedules])
 
   // Handle upload success
-  const handleUploadSuccess = () => {
+  const handleUploadSuccess = (responseData?: any) => {
+    let description = "Schedule uploaded successfully"
+
+    if (responseData) {
+      const parts = []
+      if (responseData.tutorsMatched > 0) {
+        parts.push(`${responseData.tutorsMatched} tutor(s) matched`)
+      }
+      if (responseData.tutorsCreated > 0) {
+        parts.push(`${responseData.tutorsCreated} new tutor(s) created`)
+      }
+      if (responseData.slotsCreated > 0) {
+        parts.push(`${responseData.slotsCreated} slot(s) imported`)
+      }
+      if (parts.length > 0) {
+        description = parts.join(", ")
+      }
+    }
+
     toast({
       title: "Success",
-      description: "Schedule uploaded successfully",
+      description,
     })
     fetchSchedules()
   }
@@ -260,13 +307,37 @@ export default function TutorSchedulesPage() {
       {/* Schedule View */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Current Schedules</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-semibold">Current Schedules</h2>
+            {canViewAll && (
+              <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'own' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('own')}
+                  className="h-8 px-3"
+                >
+                  <User className="h-4 w-4 mr-1" />
+                  My Schedule
+                </Button>
+                <Button
+                  variant={viewMode === 'all' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('all')}
+                  className="h-8 px-3"
+                >
+                  <Users className="h-4 w-4 mr-1" />
+                  All Schedules
+                </Button>
+              </div>
+            )}
+          </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handleDeduplicate}
-              disabled={loading || deduplicating}
+              disabled={loading || deduplicating || activeTab === "excel"}
               className="border-orange-200 text-orange-700 hover:bg-orange-50"
             >
               <Filter className={`h-4 w-4 mr-2 ${deduplicating ? 'animate-pulse' : ''}`} />
@@ -276,7 +347,7 @@ export default function TutorSchedulesPage() {
               variant="outline"
               size="sm"
               onClick={handleReprocess}
-              disabled={loading || reprocessing}
+              disabled={loading || reprocessing || activeTab === "excel"}
               className="border-blue-200 text-blue-700 hover:bg-blue-50"
             >
               <Zap className={`h-4 w-4 mr-2 ${reprocessing ? 'animate-pulse' : ''}`} />
@@ -286,7 +357,7 @@ export default function TutorSchedulesPage() {
               variant="outline"
               size="sm"
               onClick={fetchSchedules}
-              disabled={loading}
+              disabled={loading || activeTab === "excel"}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -294,52 +365,69 @@ export default function TutorSchedulesPage() {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search tutors..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+        {/* Tabs for switching views */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="accordion">Accordion View</TabsTrigger>
+            <TabsTrigger value="excel">Excel Grid View (Lead Tutors)</TabsTrigger>
+          </TabsList>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <span className="ml-2 text-gray-600">Loading schedules...</span>
-          </div>
-        )}
+          {/* Accordion View Tab */}
+          <TabsContent value="accordion" className="space-y-4">
 
-        {/* Schedule Display */}
-        {!loading && (
-          <>
-            {filteredSchedules.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600">
-                  Showing {filteredSchedules.length} tutor{filteredSchedules.length !== 1 ? 's' : ''}
-                  {searchQuery && ` matching "${searchQuery}"`}
-                </p>
-                <TutorScheduleView
-                  schedules={filteredSchedules}
-                  onEditSlot={handleEditSlot}
-                  onDeleteSlot={handleDeleteSlot}
-                  onAddSlot={handleAddSlot}
-                />
-              </div>
-            ) : (
-              <div className="text-center py-12 text-gray-500">
-                {searchQuery ? (
-                  <p>No tutors found matching "{searchQuery}"</p>
-                ) : (
-                  <p>No schedules available. Upload a schedule file to get started.</p>
-                )}
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search tutors..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Loading State */}
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <span className="ml-2 text-gray-600">Loading schedules...</span>
               </div>
             )}
-          </>
-        )}
+
+            {/* Schedule Display */}
+            {!loading && (
+              <>
+                {filteredSchedules.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600">
+                      Showing {filteredSchedules.length} tutor{filteredSchedules.length !== 1 ? 's' : ''}
+                      {searchQuery && ` matching "${searchQuery}"`}
+                    </p>
+                    <TutorScheduleView
+                      schedules={filteredSchedules}
+                      onEditSlot={handleEditSlot}
+                      onDeleteSlot={handleDeleteSlot}
+                      onAddSlot={handleAddSlot}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    {searchQuery ? (
+                      <p>No tutors found matching "{searchQuery}"</p>
+                    ) : (
+                      <p>No schedules available. Upload a schedule file to get started.</p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+
+          {/* Excel Grid View Tab */}
+          <TabsContent value="excel">
+            <LeadTutorSchedulesView />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase-server"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, getUserTutor, hasPermissionCheck } from "@/lib/auth"
 
 /**
  * Update an availability slot
  * PUT /api/schedule/slot/[id]
- * Requires: Authentication
+ * Requires: Authentication + (own slot OR lead_tutor+ role)
  */
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  let user
   try {
     // Require authentication
-    await requireAuth()
+    user = await requireAuth()
   } catch (error) {
     return NextResponse.json(
       { error: "Unauthorized - authentication required" },
@@ -30,6 +31,39 @@ export async function PUT(
     const { id } = params
     const body = await request.json()
     const { day_of_week, start_time, end_time } = body
+
+    // Check permissions: user must own the slot OR have edit_all_schedules permission
+    const canEditAll = hasPermissionCheck(user, 'EDIT_ALL_SCHEDULES')
+
+    if (!canEditAll) {
+      // Regular tutor - verify they own this slot
+      const tutorInfo = await getUserTutor(user.user_id)
+
+      if (!tutorInfo) {
+        return NextResponse.json(
+          { error: "No tutor profile found for this user" },
+          { status: 403 }
+        )
+      }
+
+      // Get the slot to check ownership
+      const { data: slot, error: fetchError } = await supabase
+        .from("tutor_availability")
+        .select("tutor_id")
+        .eq("availability_id", id)
+        .single()
+
+      if (fetchError || !slot) {
+        return NextResponse.json({ error: "Slot not found" }, { status: 404 })
+      }
+
+      if (slot.tutor_id !== tutorInfo.tutor_id) {
+        return NextResponse.json(
+          { error: "Permission denied - you can only edit your own schedule" },
+          { status: 403 }
+        )
+      }
+    }
 
     // Build update object
     const updateData: any = { updated_at: new Date().toISOString() }
@@ -84,15 +118,16 @@ export async function PUT(
 /**
  * Delete an availability slot
  * DELETE /api/schedule/slot/[id]
- * Requires: Authentication
+ * Requires: Authentication + (own slot OR lead_tutor+ role)
  */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  let user
   try {
     // Require authentication
-    await requireAuth()
+    user = await requireAuth()
   } catch (error) {
     return NextResponse.json(
       { error: "Unauthorized - authentication required" },
@@ -107,6 +142,39 @@ export async function DELETE(
     }
 
     const { id } = params
+
+    // Check permissions: user must own the slot OR have edit_all_schedules permission
+    const canEditAll = hasPermissionCheck(user, 'EDIT_ALL_SCHEDULES')
+
+    if (!canEditAll) {
+      // Regular tutor - verify they own this slot
+      const tutorInfo = await getUserTutor(user.user_id)
+
+      if (!tutorInfo) {
+        return NextResponse.json(
+          { error: "No tutor profile found for this user" },
+          { status: 403 }
+        )
+      }
+
+      // Get the slot to check ownership
+      const { data: slot, error: fetchError } = await supabase
+        .from("tutor_availability")
+        .select("tutor_id")
+        .eq("availability_id", id)
+        .single()
+
+      if (fetchError || !slot) {
+        return NextResponse.json({ error: "Slot not found" }, { status: 404 })
+      }
+
+      if (slot.tutor_id !== tutorInfo.tutor_id) {
+        return NextResponse.json(
+          { error: "Permission denied - you can only delete your own schedule" },
+          { status: 403 }
+        )
+      }
+    }
 
     // Delete slot
     const { error } = await supabase

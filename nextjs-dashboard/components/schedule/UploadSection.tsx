@@ -8,7 +8,7 @@ import { parseScheduleFile, ParseResult } from "@/lib/scheduleParser"
 import { PreviewDialog } from "./PreviewDialog"
 
 interface UploadSectionProps {
-  onUploadSuccess: () => void
+  onUploadSuccess: (responseData?: any) => void
 }
 
 export function UploadSection({ onUploadSuccess }: UploadSectionProps) {
@@ -101,8 +101,8 @@ export function UploadSection({ onUploadSuccess }: UploadSectionProps) {
         fileInputRef.current.value = ""
       }
 
-      // Trigger parent refresh
-      onUploadSuccess()
+      // Trigger parent refresh with response data
+      onUploadSuccess(data)
 
     } catch (err: any) {
       setError(err.message || "Failed to upload file")

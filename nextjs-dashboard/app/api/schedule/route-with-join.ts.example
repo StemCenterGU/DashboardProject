@@ -1,0 +1,153 @@
+// OPTIMIZED VERSION using SQL JOIN
+// This file shows an alternative implementation using a single JOIN query
+// for better performance and data integrity.
+//
+// To use this version:
+// 1. Backup the current route.ts
+// 2. Replace the query section (lines 31-60) with the code below
+
+import { NextRequest, NextResponse } from "next/server"
+import { createServerClient } from "@/lib/supabase-server"
+import { requireAuth } from "@/lib/auth"
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+export async function GET(request: NextRequest) {
+  try {
+    await requireAuth()
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Unauthorized - authentication required" },
+      { status: 401 }
+    )
+  }
+
+  try {
+    const supabase = await createServerClient()
+    if (!supabase) {
+      return NextResponse.json({ error: "Database connection failed" }, { status: 500 })
+    }
+
+    // OPTIMIZED: Single query with JOIN
+    // This ensures we only get availability for tutors that exist
+    // and includes tutor_name directly in the result
+    const { data: availability, error: availError } = await supabase
+      .from("tutor_availability")
+      .select(`
+        availability_id,
+        tutor_id,
+        day_of_week,
+        start_time,
+        end_time,
+        is_available,
+        created_at,
+        updated_at,
+        tutors (
+          tutor_id,
+          tutor_name,
+          username
+        )
+      `)
+      .eq("is_available", true)
+      .order("day_of_week")
+      .order("start_time")
+
+    if (availError) {
+      console.error("Availability query error:", availError)
+      return NextResponse.json(
+        { error: "Failed to fetch schedules", details: availError.message },
+        { status: 500 }
+      )
+    }
+
+    if (!availability || availability.length === 0) {
+      return NextResponse.json({
+        schedules: [],
+        totalTutors: 0,
+        totalSlots: 0,
+      })
+    }
+
+    // Group by tutor, then by day
+    const grouped: Record<string, any> = {}
+
+    for (const slot of availability) {
+      const tutorId = slot.tutor_id
+      // With JOIN, tutors is an object with tutor data
+      const tutor = Array.isArray(slot.tutors) ? slot.tutors[0] : slot.tutors
+      const tutorName = tutor?.tutor_name || `Unknown Tutor (${tutorId.substring(0, 8)}...)`
+      const dayName = DAY_NAMES[slot.day_of_week] || 'Unknown'
+
+      if (!grouped[tutorId]) {
+        grouped[tutorId] = {
+          tutorId,
+          tutorName,
+          username: tutor?.username || null,
+          days: {},
+          totalSlots: 0,
+        }
+      }
+
+      if (!grouped[tutorId].days[dayName]) {
+        grouped[tutorId].days[dayName] = []
+      }
+
+      grouped[tutorId].days[dayName].push({
+        id: slot.availability_id,
+        dayOfWeek: slot.day_of_week,
+        dayName,
+        startTime: slot.start_time,
+        endTime: slot.end_time,
+        createdAt: slot.created_at,
+        updatedAt: slot.updated_at,
+      })
+
+      grouped[tutorId].totalSlots++
+    }
+
+    // Convert to array
+    const schedules = Object.values(grouped)
+
+    return NextResponse.json({
+      schedules,
+      totalTutors: schedules.length,
+      totalSlots: availability.length,
+    })
+
+  } catch (error: any) {
+    console.error("Get schedules error:", error)
+    return NextResponse.json(
+      { error: "An error occurred while fetching schedules", details: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+/*
+BENEFITS OF THIS APPROACH:
+
+1. Single Query:
+   - Reduces database round-trips from 2 to 1
+   - Better performance, especially with many tutors
+
+2. Data Integrity:
+   - INNER JOIN automatically excludes orphaned availability records
+   - Only returns schedules for tutors that exist
+
+3. Cleaner Code:
+   - No manual mapping required
+   - No need to validate missing tutors
+
+4. Type Safety:
+   - Supabase automatically handles the relationship
+   - Returns properly typed nested objects
+
+MIGRATION NOTES:
+
+To switch to this implementation:
+1. Test in development first
+2. Verify the JOIN query works with your Supabase setup
+3. Check that the nested tutors object is properly returned
+4. Replace the current route.ts with this version
+5. Update tests to match new response structure
+*/

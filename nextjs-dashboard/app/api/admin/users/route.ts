@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { cookies } from 'next/headers'
-import { requireAdmin } from '@/lib/auth'
+import { requireAdminLevel } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 
 /**
  * Get all users with pagination
  * GET /api/admin/users?page=1&limit=50
- * Requires: admin or manager role
+ * Requires: admin or developer role
  */
 export async function GET(request: NextRequest) {
   try {
-    // Require admin/manager authentication
-    const currentUser = await requireAdmin()
+    // Require admin-level authentication (admin or developer)
+    const currentUser = await requireAdminLevel()
   } catch (error) {
     return NextResponse.json(
-      { error: 'Unauthorized - admin or manager role required' },
+      { error: 'Unauthorized - admin or developer role required' },
       { status: 401 }
     )
   }
@@ -49,27 +49,35 @@ export async function GET(request: NextRequest) {
 
     const currentUserRole = userData?.role || user.user_metadata?.role || 'tutor'
 
-    // Get pagination parameters
+    // Get pagination and filter parameters
     const searchParams = request.nextUrl.searchParams
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')))
     const offset = (page - 1) * limit
+    const search = searchParams.get('search') || ''
+    const roleFilter = searchParams.get('role') || ''
+    const sortBy = searchParams.get('sortBy') || 'created_at'
+    const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc'
 
-    // Get total count
-    const { count, error: countError } = await supabase
+    // Build query with filters
+    let query = supabase
       .from('users')
-      .select('*', { count: 'exact', head: true })
+      .select('user_id, email, full_name, role, active, created_at, last_login', { count: 'exact' })
+      .order(sortBy, { ascending: sortOrder === 'asc' })
+      .range(offset, offset + limit - 1)
 
-    if (countError) {
-      throw countError
+    // Apply search filter
+    if (search) {
+      query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%`)
     }
 
-    // Get users from Supabase with pagination
-    const { data: users, error } = await supabase
-      .from('users')
-      .select('user_id, email, full_name, role, active, created_at, last_login')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    // Apply role filter
+    if (roleFilter) {
+      query = query.eq('role', roleFilter)
+    }
+
+    // Get users from Supabase with pagination and filters
+    const { data: users, error, count } = await query
 
     if (error) {
       throw error
