@@ -178,7 +178,7 @@ export default function AdminScheduleRequestsPage() {
               />
             </div>
           </div>
-          <Tabs value={statusFilter} onValueChange={(val) => setStatusFilter(val as any)}>
+          <Tabs defaultValue="pending" value={statusFilter} onValueChange={(val) => setStatusFilter(val as any)}>
             <TabsList>
               <TabsTrigger value="pending">Pending Only</TabsTrigger>
               <TabsTrigger value="all">All Requests</TabsTrigger>

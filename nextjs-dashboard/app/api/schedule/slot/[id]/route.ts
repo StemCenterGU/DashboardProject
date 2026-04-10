@@ -9,7 +9,7 @@ import { requireAuth, getUserTutor, hasPermissionCheck } from "@/lib/auth"
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let user
   try {
@@ -28,7 +28,7 @@ export async function PUT(
       return NextResponse.json({ error: "Database connection failed" }, { status: 500 })
     }
 
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const { day_of_week, start_time, end_time } = body
 
@@ -122,7 +122,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let user
   try {
@@ -141,7 +141,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Database connection failed" }, { status: 500 })
     }
 
-    const { id } = params
+    const { id } = await params
 
     // Check permissions: user must own the slot OR have edit_all_schedules permission
     const canEditAll = hasPermissionCheck(user, 'EDIT_ALL_SCHEDULES')

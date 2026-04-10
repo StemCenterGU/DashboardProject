@@ -656,7 +656,7 @@ export default function TutorSchedulesPage() {
         </div>
 
         {/* Tabs for switching views */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="accordion" value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="accordion">Accordion View</TabsTrigger>
             {/* Excel Grid View - only for lead_tutor and above */}
