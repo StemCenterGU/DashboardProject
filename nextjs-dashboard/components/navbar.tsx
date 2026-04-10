@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LogOut, User, Settings, Code2, Users, CalendarClock } from "lucide-react"
+import { NotificationBell } from "@/components/notifications/NotificationBell"
 
 export function Navbar() {
   const router = useRouter()
@@ -114,6 +115,12 @@ export function Navbar() {
               <CalendarClock className="h-4 w-4" />
               Tutor Schedules
             </Link>
+            {(user?.role === "admin" || user?.role === "manager" || user?.role === "developer") && (
+              <Link href="/admin/schedule-requests" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
+                <CalendarClock className="h-4 w-4" />
+                Schedule Requests
+              </Link>
+            )}
             {(user?.role === "admin" || user?.role === "developer") && (
               <Link href="/admin/users" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
                 <Users className="h-4 w-4" />
@@ -137,18 +144,23 @@ export function Navbar() {
         </div>
 
         {mounted ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
-                    {(user?.full_name || user?.user_metadata?.full_name || user?.email || "U")
-                      .charAt(0)
-                      .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
+          <div className="flex items-center gap-2">
+            {/* Notification Bell */}
+            {user && <NotificationBell />}
+
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      {(user?.full_name || user?.user_metadata?.full_name || user?.email || "U")
+                        .charAt(0)
+                        .toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
@@ -179,7 +191,8 @@ export function Navbar() {
                 Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          </div>
         ) : (
           <Button variant="ghost" className="relative h-8 w-8 rounded-full" disabled>
             <Avatar className="h-8 w-8">

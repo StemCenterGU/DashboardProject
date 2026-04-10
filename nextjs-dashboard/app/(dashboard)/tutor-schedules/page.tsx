@@ -4,8 +4,11 @@ import { useState, useEffect } from "react"
 import { UploadSection } from "@/components/schedule/UploadSection"
 import { TutorScheduleView } from "@/components/schedule/TutorScheduleView"
 import LeadTutorSchedulesView from "@/components/schedule/LeadTutorSchedulesView"
+import { DraftModeBanner } from "@/components/schedule/DraftModeBanner"
+import { PendingRequestBanner } from "@/components/schedule/PendingRequestBanner"
+import { ApprovedNotificationModal } from "@/components/schedule/ApprovedNotificationModal"
 import { Input } from "@/components/ui/input"
-import { Loader2, Search, RefreshCw, Zap, Filter, User, Users } from "lucide-react"
+import { Loader2, Search, RefreshCw, Zap, Filter, User, Users, Edit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -29,10 +32,20 @@ export default function TutorSchedulesPage() {
   const [activeTab, setActiveTab] = useState("accordion")
   const [viewMode, setViewMode] = useState<'own' | 'all'>('own')
   const [canViewAll, setCanViewAll] = useState(false)
+
+  // Draft mode states
+  const [draftMode, setDraftMode] = useState(false)
+  const [draftChanges, setDraftChanges] = useState<any[]>([])
+  const [currentRequest, setCurrentRequest] = useState<any>(null)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showApprovedModal, setShowApprovedModal] = useState(false)
+  const [approvedRequestData, setApprovedRequestData] = useState<any>(null)
+
   const { toast } = useToast()
   const { user, role, isLoading: authLoading } = useUser()
 
-  // Check if user can view all schedules
+  // Check if user can view all schedules and ensure regular tutors only see accordion view
   useEffect(() => {
     if (role) {
       const hasViewAllPermission = hasPermission(role, 'VIEW_ALL_SCHEDULES')
@@ -41,8 +54,186 @@ export default function TutorSchedulesPage() {
       if (hasViewAllPermission) {
         setViewMode('all')
       }
+      // Force regular tutors to accordion view
+      if (role === 'tutor' && activeTab === 'excel') {
+        setActiveTab('accordion')
+      }
     }
-  }, [role])
+  }, [role, activeTab])
+
+  // Fetch draft status on component mount
+  const fetchDraftStatus = async () => {
+    if (!user || !role || !hasPermission(role, 'CREATE_SCHEDULE_DRAFT')) return
+
+    try {
+      const response = await fetch('/api/schedule/draft')
+      if (!response.ok) {
+        if (response.status === 404) {
+          // No draft exists
+          setDraftMode(false)
+          setCurrentRequest(null)
+          setDraftChanges([])
+          return
+        }
+        throw new Error('Failed to fetch draft status')
+      }
+
+      const data = await response.json()
+
+      if (data.request) {
+        setCurrentRequest(data.request)
+        setDraftChanges(data.request.schedule_change_slots || [])
+        setDraftMode(data.request.status === 'draft')
+
+        // Check if recently approved
+        if (data.request.status === 'approved' && !sessionStorage.getItem(`approved_shown_${data.request.request_id}`)) {
+          setApprovedRequestData(data.request)
+          setShowApprovedModal(true)
+          sessionStorage.setItem(`approved_shown_${data.request.request_id}`, 'true')
+        }
+      }
+    } catch (error: any) {
+      console.error('Fetch draft status error:', error)
+    }
+  }
+
+  // Enter draft mode
+  const enterDraftMode = () => {
+    if (currentRequest && currentRequest.status === 'pending') {
+      toast({
+        title: "Cannot Edit",
+        description: "You have a pending request awaiting approval. Please wait for admin review.",
+        variant: "destructive",
+      })
+      return
+    }
+    setDraftMode(true)
+    setDraftChanges([])
+  }
+
+  // Save draft
+  const saveDraft = async () => {
+    if (draftChanges.length === 0) {
+      toast({
+        title: "No Changes",
+        description: "Make some changes to your schedule before saving.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSavingDraft(true)
+    try {
+      const response = await fetch('/api/schedule/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slots: draftChanges }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save draft')
+      }
+
+      const data = await response.json()
+      setCurrentRequest(data.request)
+
+      toast({
+        title: "Draft Saved",
+        description: "Your changes have been saved as a draft.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
+    } finally {
+      setIsSavingDraft(false)
+    }
+  }
+
+  // Submit for approval
+  const submitForApproval = async () => {
+    if (draftChanges.length === 0) {
+      toast({
+        title: "No Changes",
+        description: "Make some changes to your schedule before submitting.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Save draft first if not saved
+    if (!currentRequest) {
+      await saveDraft()
+    }
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch('/api/schedule/submit', {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to submit for approval')
+      }
+
+      const data = await response.json()
+
+      toast({
+        title: "Submitted Successfully",
+        description: "Your schedule changes have been sent to admin for review.",
+      })
+
+      // Refresh to show pending banner
+      await fetchDraftStatus()
+      setDraftMode(false)
+      setDraftChanges([])
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Discard draft
+  const discardDraft = async () => {
+    if (!confirm('Are you sure you want to discard your draft changes? This cannot be undone.')) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/schedule/draft', {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to discard draft')
+      }
+
+      setDraftMode(false)
+      setDraftChanges([])
+      setCurrentRequest(null)
+
+      toast({
+        title: "Draft Discarded",
+        description: "Your draft changes have been deleted.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
+    }
+  }
 
   // Fetch schedules with viewMode parameter
   const fetchSchedules = async () => {
@@ -80,12 +271,13 @@ export default function TutorSchedulesPage() {
     }
   }
 
-  // Fetch schedules when viewMode changes
+  // Fetch schedules and draft status when viewMode changes
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && user) {
       fetchSchedules()
+      fetchDraftStatus()
     }
-  }, [viewMode, authLoading])
+  }, [viewMode, authLoading, user])
 
   // Filter schedules by search query
   useEffect(() => {
@@ -131,6 +323,25 @@ export default function TutorSchedulesPage() {
 
   // Handle edit slot
   const handleEditSlot = async (slotId: string, updates: any) => {
+    // If in draft mode, add to draft changes instead of directly updating
+    if (draftMode) {
+      const newChange = {
+        action: 'modify',
+        original_slot_id: slotId,
+        day_of_week: updates.day_of_week,
+        start_time: updates.start_time,
+        end_time: updates.end_time,
+      }
+      setDraftChanges([...draftChanges, newChange])
+
+      toast({
+        title: "Change Added to Draft",
+        description: "Remember to save your draft or submit for approval.",
+      })
+      return
+    }
+
+    // Otherwise, update directly (for admins/managers editing all schedules)
     try {
       const response = await fetch(`/api/schedule/slot/${slotId}`, {
         method: "PUT",
@@ -160,6 +371,22 @@ export default function TutorSchedulesPage() {
 
   // Handle delete slot
   const handleDeleteSlot = async (slotId: string) => {
+    // If in draft mode, add deletion to draft changes
+    if (draftMode) {
+      const newChange = {
+        action: 'delete',
+        original_slot_id: slotId,
+      }
+      setDraftChanges([...draftChanges, newChange])
+
+      toast({
+        title: "Deletion Added to Draft",
+        description: "Remember to save your draft or submit for approval.",
+      })
+      return
+    }
+
+    // Otherwise, delete directly (for admins/managers)
     try {
       const response = await fetch(`/api/schedule/slot/${slotId}`, {
         method: "DELETE",
@@ -187,6 +414,24 @@ export default function TutorSchedulesPage() {
 
   // Handle add slot
   const handleAddSlot = async (data: any) => {
+    // If in draft mode, add to draft changes
+    if (draftMode) {
+      const newChange = {
+        action: 'add',
+        day_of_week: data.day_of_week,
+        start_time: data.start_time,
+        end_time: data.end_time,
+      }
+      setDraftChanges([...draftChanges, newChange])
+
+      toast({
+        title: "Addition Added to Draft",
+        description: "Remember to save your draft or submit for approval.",
+      })
+      return
+    }
+
+    // Otherwise, add directly (for admins/managers)
     try {
       const response = await fetch("/api/schedule/slot", {
         method: "POST",
@@ -293,6 +538,9 @@ export default function TutorSchedulesPage() {
     }
   }
 
+  const canCreateDraft = role ? hasPermission(role, 'CREATE_SCHEDULE_DRAFT') : false
+  const hasPendingRequest = currentRequest?.status === 'pending'
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -300,6 +548,36 @@ export default function TutorSchedulesPage() {
         <h1 className="text-3xl font-bold text-gray-900">Tutor Schedule Management</h1>
         <p className="text-gray-600 mt-1">Upload and manage tutor availability schedules</p>
       </div>
+
+      {/* Draft Mode Banner */}
+      {draftMode && draftChanges.length > 0 && (
+        <DraftModeBanner
+          onSave={saveDraft}
+          onSubmit={submitForApproval}
+          onDiscard={discardDraft}
+          isSaving={isSavingDraft}
+          isSubmitting={isSubmitting}
+          changeCount={draftChanges.length}
+        />
+      )}
+
+      {/* Pending Request Banner */}
+      {!draftMode && hasPendingRequest && (
+        <PendingRequestBanner
+          requestId={currentRequest.request_id}
+          submittedAt={currentRequest.submitted_at}
+          changeCount={currentRequest.schedule_change_slots?.length || 0}
+        />
+      )}
+
+      {/* Approved Notification Modal */}
+      <ApprovedNotificationModal
+        open={showApprovedModal}
+        onClose={() => setShowApprovedModal(false)}
+        approvedAt={approvedRequestData?.reviewed_at}
+        changeCount={approvedRequestData?.schedule_change_slots?.length}
+        adminNotes={approvedRequestData?.admin_notes}
+      />
 
       {/* Upload Section */}
       <UploadSection onUploadSuccess={handleUploadSuccess} />
@@ -333,6 +611,18 @@ export default function TutorSchedulesPage() {
             )}
           </div>
           <div className="flex gap-2">
+            {/* Edit Schedule Button for tutors */}
+            {canCreateDraft && viewMode === 'own' && !draftMode && !hasPendingRequest && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={enterDraftMode}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit My Schedule
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -369,7 +659,10 @@ export default function TutorSchedulesPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="accordion">Accordion View</TabsTrigger>
-            <TabsTrigger value="excel">Excel Grid View (Lead Tutors)</TabsTrigger>
+            {/* Excel Grid View - only for lead_tutor and above */}
+            {role && role !== 'tutor' && (
+              <TabsTrigger value="excel">Excel Grid View</TabsTrigger>
+            )}
           </TabsList>
 
           {/* Accordion View Tab */}
