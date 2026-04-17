@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
 
     // Validate admin-only fields
     if (is_no_show && currentUser) {
-      const isAdmin = ['admin', 'manager', 'lead_tutor'].includes(currentUser.role)
+      const userRole = currentUser.role ?? ''
+      const isAdmin = ['admin', 'manager', 'lead_tutor'].includes(userRole)
       if (!isAdmin) {
         return NextResponse.json(
           { error: "Only admins, managers, and lead tutors can mark appointments as no-show" },
