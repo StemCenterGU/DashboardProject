@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Calendar, Clock, Users, BookOpen, Plus, Search, Loader2, ChevronDown } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, startTransition } from "react"
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, parseISO } from "date-fns"
 import { WeekAsDayGrids, AppointmentDetail } from "@/components/week-as-day-grids"
 import { TodayAppointments, UpcomingAppointments } from "@/components/scheduling"
@@ -248,14 +248,18 @@ export default function SchedulingPage() {
   const handleSlotClick = (tutorId: string, tutorName: string, date: string, hour: number) => {
     // Convert hour to HH:MM format
     const startTime = `${String(hour).padStart(2, "0")}:00`
-    setSelectedSlot({ tutorId, tutorName, date, startTime })
-    setBookingDialogOpen(true)
+    startTransition(() => {
+      setSelectedSlot({ tutorId, tutorName, date, startTime })
+      setBookingDialogOpen(true)
+    })
   }
 
   // Handle booked slot click from schedule grid (view appointment details)
   const handleBookedSlotClick = (appointment: AppointmentDetail, tutorName: string, date: string, hour: number) => {
-    setSelectedAppointmentDetail({ appointment, tutorName, date })
-    setDetailDialogOpen(true)
+    startTransition(() => {
+      setSelectedAppointmentDetail({ appointment, tutorName, date })
+      setDetailDialogOpen(true)
+    })
   }
 
   // Handle successful booking
