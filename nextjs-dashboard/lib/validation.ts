@@ -33,6 +33,7 @@ export const appointmentStatusSchema = z.enum([
   'confirmed',
   'completed',
   'cancelled',
+  'booked',
   'missed',
   'no_show',
 ])

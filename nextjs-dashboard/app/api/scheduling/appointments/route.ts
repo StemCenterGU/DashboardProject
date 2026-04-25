@@ -409,6 +409,11 @@ export async function PATCH(request: NextRequest) {
       updateData.status = updateFields.status
       if (updateFields.status === 'no_show' || updateFields.status === 'missed') {
         updateData.is_missed = true
+        updateData.is_no_show = true
+      } else if (updateFields.status === 'booked') {
+        // Restore appointment from no-show/missed status
+        updateData.is_missed = false
+        updateData.is_no_show = false
       }
     }
 

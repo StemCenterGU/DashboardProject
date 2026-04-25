@@ -62,9 +62,22 @@ export async function GET(request: NextRequest) {
       supabase.from("courses").select("course_id, course_code, course_name").eq("active", true).order("course_name"),
       courseCode
         ? supabase
+          .from("tutor_courses")
+          // join through tutor_courses.course_id -> courses.course_id
+          .select("tutor_id, courses!inner(course_code)")
+          .in(
+            "instructor",
+            instructor
+              ? instructor === "any instructors"
+                ? ["any instructors"]
+                : [instructor, "any instructors"]
+              : ["any instructors", instructor].filter(Boolean) as string[]
+          )
+          .eq("courses.course_code", courseCode)
+        : focusName
+          ? supabase
             .from("tutor_courses")
-            // join through tutor_courses.course_id -> courses.course_id
-            .select("tutor_id, courses!inner(course_code)")
+            .select("tutor_id, courses!inner(course_name)")
             .in(
               "instructor",
               instructor
@@ -73,21 +86,8 @@ export async function GET(request: NextRequest) {
                   : [instructor, "any instructors"]
                 : ["any instructors", instructor].filter(Boolean) as string[]
             )
-            .eq("courses.course_code", courseCode)
-        : focusName
-          ? supabase
-              .from("tutor_courses")
-              .select("tutor_id, courses!inner(course_name)")
-              .in(
-                "instructor",
-                instructor
-                  ? instructor === "any instructors"
-                    ? ["any instructors"]
-                    : [instructor, "any instructors"]
-                  : ["any instructors", instructor].filter(Boolean) as string[]
-              )
-              .eq("courses.course_name", focusName)
-        : Promise.resolve({ data: null, error: null }),
+            .eq("courses.course_name", focusName)
+          : Promise.resolve({ data: null, error: null }),
     ])
 
     if (tutorsRes.error) return NextResponse.json({ error: tutorsRes.error.message }, { status: 500 })
@@ -162,6 +162,8 @@ export async function GET(request: NextRequest) {
               apt.tutor_id === tutor.tutor_id &&
               apt.appointment_date === dateStr &&
               String(apt.status) !== "cancelled" &&
+              String(apt.status) !== "no_show" &&
+              String(apt.status) !== "missed" &&
               matchesMeetingType(apt) &&
               (() => {
                 const aptStart = String(apt.start_time).slice(0, 8)

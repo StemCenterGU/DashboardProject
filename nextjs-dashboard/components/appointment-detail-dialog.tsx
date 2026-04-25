@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, ChevronDown, AlertCircle, XCircle, Send, Paperclip, X, Calendar, Printer, User, Repeat, FilePlus, FileText } from "lucide-react"
+import { Loader2, ChevronDown, AlertCircle, XCircle, Send, Paperclip, X, Calendar, Printer, User, Repeat, FilePlus, FileText, FileEdit } from "lucide-react"
 
 interface FocusOption {
   focus_id: string
@@ -469,10 +469,18 @@ export function AppointmentDetailDialog({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {!isAppointmentNoShow && (
+                    {!isAppointmentNoShow ? (
                       <DropdownMenuItem onClick={handleMarkNoShow}>
                         <AlertCircle className="mr-2 h-4 w-4" />
                         Mark as a No-Show
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem
+                        onClick={() => handleStatusUpdate("booked")}
+                        className="text-green-600 focus:text-green-700"
+                      >
+                        <AlertCircle className="mr-2 h-4 w-4" />
+                        Restore Appointment
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => router.push(`/clients/${appointment.appointment_id}`)}>
@@ -698,6 +706,16 @@ export function AppointmentDetailDialog({
 
           {/* Bottom Buttons */}
           <DialogFooter className="flex flex-wrap gap-2 justify-center sm:justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-green-600 text-white hover:bg-green-700 border-green-600"
+              onClick={() => router.push(`/reports/new?appointment_id=${appointment.appointment_id}`)}
+              disabled={isAppointmentCancelled}
+            >
+              <FileEdit className="mr-1 h-4 w-4" />
+              Create Report
+            </Button>
             <Button
               variant="outline"
               size="sm"
