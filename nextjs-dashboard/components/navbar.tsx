@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { LogOut, User, Settings, Code2, Users, CalendarClock } from "lucide-react"
+import { LogOut, User, Settings, Code2, Users, CalendarClock, FileText, ClipboardList, UserPlus, Wrench } from "lucide-react"
 import { NotificationBell } from "@/components/notifications/NotificationBell"
 
 export function Navbar() {
@@ -115,6 +115,10 @@ export function Navbar() {
               <CalendarClock className="h-4 w-4" />
               Tutor Schedules
             </Link>
+            <Link href="/reports" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
+              <FileText className="h-4 w-4" />
+              Reports
+            </Link>
             {(user?.role === "admin" || user?.role === "manager" || user?.role === "developer") && (
               <Link href="/admin/schedule-requests" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
                 <CalendarClock className="h-4 w-4" />
@@ -122,10 +126,41 @@ export function Navbar() {
               </Link>
             )}
             {(user?.role === "admin" || user?.role === "developer") && (
-              <Link href="/admin/users" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                User Management
-              </Link>
+              <>
+                <Link href="/admin/users" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  User Management
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
+                      <Wrench className="h-4 w-4" />
+                      Admin Setup
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Form Configuration</DropdownMenuLabel>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/form-setup" className="cursor-pointer">
+                        <ClipboardList className="mr-2 h-4 w-4" />
+                        Appointment Forms
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/report-options" className="cursor-pointer">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Report Options
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/registration-setup" className="cursor-pointer">
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Registration Forms
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             )}
             {(user?.role === "admin" || user?.role === "manager") && (
               <Link href="/users" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
