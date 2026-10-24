@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
+import { DEFAULT_ROLE } from '@/lib/roles'
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,7 +49,6 @@ export async function POST(request: NextRequest) {
       options: {
         data: {
           full_name: fullName,
-          role: 'tutor', // Default role
         },
         emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/dashboard`,
       },
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
               user_id: authData.user.id, // Use Supabase Auth user ID
               email: email.toLowerCase().trim(),
               full_name: fullName,
-              role: 'tutor', // Default role
+              role: DEFAULT_ROLE,
               active: true,
             })
 

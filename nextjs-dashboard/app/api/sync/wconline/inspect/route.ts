@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requirePermission, authErrorStatus } from '@/lib/auth'
 import { WCOnlineService } from '@/lib/wconline'
 
 /**
@@ -10,6 +11,12 @@ import { WCOnlineService } from '@/lib/wconline'
  * so we can update the field mapping accordingly.
  */
 export async function GET(request: NextRequest) {
+  try {
+    await requirePermission('DEBUG_TOOLS')
+  } catch (error) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: authErrorStatus(error) })
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams
     const requestType = (searchParams.get('type') || 'APPTS') as 'AVAIL' | 'SCHED' | 'APPTS' | 'STAFF' | 'CUSTOM'

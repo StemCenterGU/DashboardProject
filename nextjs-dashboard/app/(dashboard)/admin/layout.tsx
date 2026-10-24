@@ -8,7 +8,7 @@
 import { useUser } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { isAdminLevel } from '@/lib/roles'
+import { isFullAccess } from '@/lib/roles'
 import { Loader2 } from 'lucide-react'
 
 export default function AdminLayout({
@@ -21,7 +21,7 @@ export default function AdminLayout({
 
   useEffect(() => {
     // Redirect non-admin users
-    if (!isLoading && !isAdminLevel(role)) {
+    if (!isLoading && !isFullAccess(role)) {
       router.push('/dashboard')
     }
   }, [role, isLoading, router])
@@ -36,7 +36,7 @@ export default function AdminLayout({
   }
 
   // Don't render if not admin
-  if (!isAdminLevel(role)) {
+  if (!isFullAccess(role)) {
     return null
   }
 

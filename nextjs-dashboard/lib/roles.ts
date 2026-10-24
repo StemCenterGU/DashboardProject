@@ -1,10 +1,10 @@
 /**
  * Role-Based Access Control (RBAC) Constants
- * Single source of truth for all role definitions and permission hierarchies
+ * Single source of truth for all role definitions and permission groups.
+ * Import from here instead of hard-coding role strings anywhere else.
  *
- * ROLE HIERARCHY (highest to lowest):
- * ADMIN → MANAGER → LEAD_TUTOR → TUTOR
- * DEVELOPER (special role with full access)
+ * ROLES (highest to lowest access):
+ * ADMIN = PROJECT_MANAGER → STUDENT_MANAGER → TUTOR = STEM_PASS_TUTOR → STUDENT
  */
 
 // ============================================================================
@@ -12,90 +12,66 @@
 // ============================================================================
 
 export const ROLES = {
-  TUTOR: 'tutor',
-  LEAD_TUTOR: 'lead_tutor',
-  MANAGER: 'manager',
   ADMIN: 'admin',
-  DEVELOPER: 'developer',
+  PROJECT_MANAGER: 'project_manager',
+  STUDENT_MANAGER: 'student_manager',
+  TUTOR: 'tutor',
+  STEM_PASS_TUTOR: 'stem_pass_tutor',
+  STUDENT: 'student',
 } as const
 
 // TypeScript type for all valid roles
 export type Role = typeof ROLES[keyof typeof ROLES]
 
+/**
+ * Role given to every new account. Admins promote staff from User Management.
+ */
+export const DEFAULT_ROLE: Role = ROLES.STUDENT
+
 // ============================================================================
-// Role Hierarchies & Permission Groups
+// Role Groups
 // ============================================================================
 
 /**
- * TUTOR_LEVEL_ROLES - Can perform basic tutoring operations
- * - Create and manage their own appointments
- * - View their own schedules
- * - Upload appointment attachments
- * - View student information
+ * FULL_ACCESS_ROLES - Full administrative access (admin and project manager are equal)
+ * - Every permission in the system
+ * - User and role management
+ * - System configuration, forms, sync, uploads
+ * - View and edit every appointment
  */
-export const TUTOR_LEVEL_ROLES: Role[] = [
+export const FULL_ACCESS_ROLES: Role[] = [
+  ROLES.ADMIN,
+  ROLES.PROJECT_MANAGER,
+]
+
+/**
+ * OVERSIGHT_ROLES - Can view everything, edit only their own records
+ * - View all tutors' appointments, schedules and reports (read-only)
+ * - Analytics
+ */
+export const OVERSIGHT_ROLES: Role[] = [
+  ROLES.STUDENT_MANAGER,
+  ...FULL_ACCESS_ROLES,
+]
+
+/**
+ * STAFF_ROLES - Tutoring staff (everyone except students)
+ * - Manage their own appointments and schedule
+ * - Create client reports
+ */
+export const STAFF_ROLES: Role[] = [
   ROLES.TUTOR,
-  ROLES.LEAD_TUTOR,
-  ROLES.MANAGER,
-  ROLES.ADMIN,
-  ROLES.DEVELOPER,
+  ROLES.STEM_PASS_TUTOR,
+  ...OVERSIGHT_ROLES,
 ]
 
 /**
- * LEAD_TUTOR_LEVEL_ROLES - Supervisor level access
- * - All TUTOR permissions
- * - View all tutors' schedules
- * - Manage tutor availability
- * - Generate reports
- * - Approve/modify other tutors' appointments
+ * TUTOR_ROLES - Roles whose "own appointments" are the ones where they are the tutor
  */
-export const LEAD_TUTOR_LEVEL_ROLES: Role[] = [
-  ROLES.LEAD_TUTOR,
-  ROLES.MANAGER,
-  ROLES.ADMIN,
-  ROLES.DEVELOPER,
-]
-
-/**
- * MANAGER_LEVEL_ROLES - Management access
- * - All LEAD_TUTOR permissions
- * - Manage all schedules
- * - Upload CSV schedules
- * - Bulk operations
- * - Advanced reporting
- * - User management
- */
-export const MANAGER_LEVEL_ROLES: Role[] = [
-  ROLES.MANAGER,
-  ROLES.ADMIN,
-  ROLES.DEVELOPER,
-]
-
-/**
- * ADMIN_LEVEL_ROLES - Full administrative access
- * - ALL permissions in the system
- * - All MANAGER permissions
- * - System configuration
- * - Role assignment
- * - Database operations
- * - Security settings
- * - User management
- * - Complete control over all features
- */
-export const ADMIN_LEVEL_ROLES: Role[] = [
-  ROLES.ADMIN,
-  ROLES.DEVELOPER,
-]
-
-/**
- * DEVELOPER_ROLES - Full system access (same as ADMIN + dev tools)
- * - All ADMIN permissions
- * - Development tools
- * - Database migrations
- * - Debug access
- */
-export const DEVELOPER_ROLES: Role[] = [
-  ROLES.DEVELOPER,
+export const TUTOR_ROLES: Role[] = [
+  ROLES.TUTOR,
+  ROLES.STEM_PASS_TUTOR,
+  ROLES.STUDENT_MANAGER,
 ]
 
 // ============================================================================
@@ -103,11 +79,8 @@ export const DEVELOPER_ROLES: Role[] = [
 // ============================================================================
 
 export const ALL_ROLES: Role[] = [
-  ROLES.TUTOR,
-  ROLES.LEAD_TUTOR,
-  ROLES.MANAGER,
-  ROLES.ADMIN,
-  ROLES.DEVELOPER,
+  ...STAFF_ROLES,
+  ROLES.STUDENT,
 ]
 
 // ============================================================================
@@ -115,44 +88,34 @@ export const ALL_ROLES: Role[] = [
 // ============================================================================
 
 /**
- * Check if a role has at least tutor-level permissions
+ * Check if a role has full access (admin or project manager)
  */
-export function isTutorLevel(role: string | undefined | null): boolean {
+export function isFullAccess(role: string | undefined | null): boolean {
   if (!role) return false
-  return TUTOR_LEVEL_ROLES.includes(role as Role)
+  return FULL_ACCESS_ROLES.includes(role as Role)
 }
 
 /**
- * Check if a role has at least lead tutor-level permissions
+ * Check if a role can view all appointments/schedules (student manager and above)
  */
-export function isLeadTutorLevel(role: string | undefined | null): boolean {
+export function canViewAll(role: string | undefined | null): boolean {
   if (!role) return false
-  return LEAD_TUTOR_LEVEL_ROLES.includes(role as Role)
+  return OVERSIGHT_ROLES.includes(role as Role)
 }
 
 /**
- * Check if a role has at least manager-level permissions
+ * Check if a role is tutoring staff (anyone except a student)
  */
-export function isManagerLevel(role: string | undefined | null): boolean {
+export function isStaff(role: string | undefined | null): boolean {
   if (!role) return false
-  return MANAGER_LEVEL_ROLES.includes(role as Role)
+  return STAFF_ROLES.includes(role as Role)
 }
 
 /**
- * Check if a role has admin-level permissions
- * ADMIN has ALL permissions in the system
+ * Check if a role is a student
  */
-export function isAdminLevel(role: string | undefined | null): boolean {
-  if (!role) return false
-  return ADMIN_LEVEL_ROLES.includes(role as Role)
-}
-
-/**
- * Check if a role is developer
- */
-export function isDeveloper(role: string | undefined | null): boolean {
-  if (!role) return false
-  return DEVELOPER_ROLES.includes(role as Role)
+export function isStudent(role: string | undefined | null): boolean {
+  return role === ROLES.STUDENT
 }
 
 /**
@@ -178,11 +141,12 @@ export function isValidRole(role: string): role is Role {
 // ============================================================================
 
 export const ROLE_DISPLAY_NAMES: Record<Role, string> = {
-  [ROLES.TUTOR]: 'Tutor',
-  [ROLES.LEAD_TUTOR]: 'Lead Tutor',
-  [ROLES.MANAGER]: 'Manager',
   [ROLES.ADMIN]: 'Administrator (Full Access)',
-  [ROLES.DEVELOPER]: 'Developer',
+  [ROLES.PROJECT_MANAGER]: 'Project Manager (Full Access)',
+  [ROLES.STUDENT_MANAGER]: 'Student Manager',
+  [ROLES.TUTOR]: 'Tutor',
+  [ROLES.STEM_PASS_TUTOR]: 'STEM PASS Tutor',
+  [ROLES.STUDENT]: 'Student',
 }
 
 /**
@@ -195,75 +159,121 @@ export function getRoleDisplayName(role: string | undefined | null): string {
 
 // ============================================================================
 // Feature Permissions (specific features by role)
-// Note: ADMIN has access to ALL of these permissions
+// Note: FULL_ACCESS_ROLES have ALL of these permissions
 // ============================================================================
 
 export const PERMISSIONS = {
-  // Appointment Management
-  CREATE_OWN_APPOINTMENTS: TUTOR_LEVEL_ROLES,
-  VIEW_OWN_APPOINTMENTS: TUTOR_LEVEL_ROLES,
-  EDIT_OWN_APPOINTMENTS: TUTOR_LEVEL_ROLES,
-  DELETE_OWN_APPOINTMENTS: TUTOR_LEVEL_ROLES,
+  // Appointment Management ("own" = you are the tutor, or the student who booked)
+  CREATE_OWN_APPOINTMENTS: ALL_ROLES,
+  VIEW_OWN_APPOINTMENTS: ALL_ROLES,
+  EDIT_OWN_APPOINTMENTS: ALL_ROLES,
+  DELETE_OWN_APPOINTMENTS: STAFF_ROLES,
+  MARK_NO_SHOW: STAFF_ROLES,
 
-  VIEW_ALL_APPOINTMENTS: LEAD_TUTOR_LEVEL_ROLES,
-  EDIT_ALL_APPOINTMENTS: LEAD_TUTOR_LEVEL_ROLES,
-  DELETE_ALL_APPOINTMENTS: MANAGER_LEVEL_ROLES,
+  VIEW_ALL_APPOINTMENTS: OVERSIGHT_ROLES,
+  EDIT_ALL_APPOINTMENTS: FULL_ACCESS_ROLES,
+  DELETE_ALL_APPOINTMENTS: FULL_ACCESS_ROLES,
 
   // Schedule Management
-  VIEW_OWN_SCHEDULE: TUTOR_LEVEL_ROLES,
-  EDIT_OWN_SCHEDULE: TUTOR_LEVEL_ROLES,
-  VIEW_ALL_SCHEDULES: LEAD_TUTOR_LEVEL_ROLES,
-  EDIT_ALL_SCHEDULES: MANAGER_LEVEL_ROLES,
-  UPLOAD_CSV_SCHEDULES: MANAGER_LEVEL_ROLES,
-  BULK_SCHEDULE_OPERATIONS: MANAGER_LEVEL_ROLES,
+  VIEW_OWN_SCHEDULE: STAFF_ROLES,
+  EDIT_OWN_SCHEDULE: STAFF_ROLES,
+  VIEW_ALL_SCHEDULES: OVERSIGHT_ROLES,
+  EDIT_ALL_SCHEDULES: FULL_ACCESS_ROLES,
+  UPLOAD_CSV_SCHEDULES: FULL_ACCESS_ROLES,
+  BULK_SCHEDULE_OPERATIONS: FULL_ACCESS_ROLES,
 
   // Schedule Change Requests (Approval Workflow)
-  CREATE_SCHEDULE_DRAFT: TUTOR_LEVEL_ROLES,
-  SUBMIT_SCHEDULE_CHANGES: TUTOR_LEVEL_ROLES,
-  VIEW_SCHEDULE_REQUESTS: MANAGER_LEVEL_ROLES,
-  APPROVE_SCHEDULE_REQUESTS: MANAGER_LEVEL_ROLES,
-  REJECT_SCHEDULE_REQUESTS: MANAGER_LEVEL_ROLES,
+  CREATE_SCHEDULE_DRAFT: STAFF_ROLES,
+  SUBMIT_SCHEDULE_CHANGES: STAFF_ROLES,
+  VIEW_SCHEDULE_REQUESTS: FULL_ACCESS_ROLES,
+  APPROVE_SCHEDULE_REQUESTS: FULL_ACCESS_ROLES,
+  REJECT_SCHEDULE_REQUESTS: FULL_ACCESS_ROLES,
 
   // User Management
-  VIEW_USERS: LEAD_TUTOR_LEVEL_ROLES,
-  EDIT_USERS: MANAGER_LEVEL_ROLES,
-  DELETE_USERS: ADMIN_LEVEL_ROLES,
-  ASSIGN_ROLES: ADMIN_LEVEL_ROLES,
+  VIEW_USERS: FULL_ACCESS_ROLES,
+  EDIT_USERS: FULL_ACCESS_ROLES,
+  DELETE_USERS: FULL_ACCESS_ROLES,
+  ASSIGN_ROLES: FULL_ACCESS_ROLES,
 
-  // Reporting
-  VIEW_OWN_REPORTS: TUTOR_LEVEL_ROLES,
-  VIEW_ALL_REPORTS: LEAD_TUTOR_LEVEL_ROLES,
-  EXPORT_REPORTS: MANAGER_LEVEL_ROLES,
+  // Reporting & Analytics
+  VIEW_OWN_REPORTS: STAFF_ROLES,
+  VIEW_ALL_REPORTS: OVERSIGHT_ROLES,
+  EXPORT_REPORTS: OVERSIGHT_ROLES,
+  VIEW_ANALYTICS: OVERSIGHT_ROLES,
 
   // Client Report Forms
-  CREATE_CLIENT_REPORT: TUTOR_LEVEL_ROLES,
-  VIEW_CLIENT_REPORT: TUTOR_LEVEL_ROLES,
-  EDIT_CLIENT_REPORT: TUTOR_LEVEL_ROLES,
-  DELETE_CLIENT_REPORT: MANAGER_LEVEL_ROLES,
-  MANAGE_REPORT_OPTIONS: MANAGER_LEVEL_ROLES,
+  CREATE_CLIENT_REPORT: STAFF_ROLES,
+  VIEW_CLIENT_REPORT: STAFF_ROLES,
+  EDIT_CLIENT_REPORT: STAFF_ROLES,
+  DELETE_CLIENT_REPORT: FULL_ACCESS_ROLES,
+  MANAGE_REPORT_OPTIONS: FULL_ACCESS_ROLES,
 
-  // System (ADMIN has full access to all of these)
-  VIEW_SYSTEM_SETTINGS: ADMIN_LEVEL_ROLES,
-  EDIT_SYSTEM_SETTINGS: ADMIN_LEVEL_ROLES,
-  DATABASE_ACCESS: ADMIN_LEVEL_ROLES,
-  DEBUG_TOOLS: DEVELOPER_ROLES,
+  // System
+  VIEW_SYSTEM_SETTINGS: FULL_ACCESS_ROLES,
+  EDIT_SYSTEM_SETTINGS: FULL_ACCESS_ROLES,
+  DATABASE_ACCESS: FULL_ACCESS_ROLES,
+  DEBUG_TOOLS: FULL_ACCESS_ROLES,
 } as const
+
+export type Permission = keyof typeof PERMISSIONS
 
 /**
  * Check if a role has a specific permission
- * ADMIN automatically has ALL permissions
+ * FULL_ACCESS_ROLES automatically have ALL permissions
  */
 export function hasPermission(
   role: string | undefined | null,
-  permission: keyof typeof PERMISSIONS
+  permission: Permission
 ): boolean {
   if (!role) return false
 
-  // ADMIN and DEVELOPER have ALL permissions
-  if (role === ROLES.ADMIN || role === ROLES.DEVELOPER) {
+  if (isFullAccess(role)) {
     return true
   }
 
   const allowedRoles = PERMISSIONS[permission]
   return allowedRoles.includes(role as Role)
+}
+
+// ============================================================================
+// Page Access (enforced in proxy.ts)
+// ============================================================================
+
+/**
+ * Which roles may open each page. Longest matching prefix wins.
+ * Pages not listed are open to every signed-in role.
+ */
+export const PAGE_ACCESS: { prefix: string; roles: Role[] }[] = [
+  { prefix: '/admin', roles: FULL_ACCESS_ROLES },
+  { prefix: '/users', roles: FULL_ACCESS_ROLES },
+  { prefix: '/replica', roles: FULL_ACCESS_ROLES },
+  { prefix: '/dashboard', roles: OVERSIGHT_ROLES },
+  { prefix: '/charts', roles: OVERSIGHT_ROLES },
+  { prefix: '/tutor-schedules', roles: STAFF_ROLES },
+  { prefix: '/reports', roles: STAFF_ROLES },
+  { prefix: '/clients', roles: STAFF_ROLES },
+  { prefix: '/scheduling/repeat', roles: STAFF_ROLES },
+  { prefix: '/scheduling/reports', roles: STAFF_ROLES },
+  { prefix: '/scheduling', roles: ALL_ROLES },
+  { prefix: '/calendar', roles: ALL_ROLES },
+  { prefix: '/profile', roles: ALL_ROLES },
+  { prefix: '/settings', roles: ALL_ROLES },
+]
+
+/**
+ * Check whether a role may open a page path
+ */
+export function canAccessPage(role: string | undefined | null, pathname: string): boolean {
+  const rule = PAGE_ACCESS
+    .filter((r) => pathname === r.prefix || pathname.startsWith(`${r.prefix}/`))
+    .sort((a, b) => b.prefix.length - a.prefix.length)[0]
+  if (!rule) return true
+  return hasPermissionLevel(role, rule.roles)
+}
+
+/**
+ * Landing page for a role after login
+ */
+export function getHomePath(role: string | undefined | null): string {
+  return canViewAll(role) ? '/dashboard' : '/scheduling'
 }

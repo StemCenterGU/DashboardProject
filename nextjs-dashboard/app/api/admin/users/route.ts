@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { cookies } from 'next/headers'
-import { requireAdminLevel } from '@/lib/auth'
+import { requireFullAccess } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 
 /**
  * Get all users with pagination
  * GET /api/admin/users?page=1&limit=50
- * Requires: admin or developer role
+ * Requires: admin or project manager role
  */
 export async function GET(request: NextRequest) {
   try {
-    // Require admin-level authentication (admin or developer)
-    const currentUser = await requireAdminLevel()
+    // Require full access (admin or project manager)
+    await requireFullAccess()
   } catch (error) {
     return NextResponse.json(
-      { error: 'Unauthorized - admin or developer role required' },
+      { error: 'Unauthorized - admin or project manager role required' },
       { status: 401 }
     )
   }
@@ -29,25 +29,6 @@ export async function GET(request: NextRequest) {
         { status: 503 }
       )
     }
-
-    // Get current user to check their role
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // Get user role from users table
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('user_id', user.id)
-      .single()
-
-    const currentUserRole = userData?.role || user.user_metadata?.role || 'tutor'
 
     // Get pagination and filter parameters
     const searchParams = request.nextUrl.searchParams
@@ -88,7 +69,6 @@ export async function GET(request: NextRequest) {
       ...user,
       created_at: user.created_at ? new Date(user.created_at).toISOString() : '',
       last_login: user.last_login ? new Date(user.last_login).toISOString() : '',
-      read_only: currentUserRole === 'lead_tutor' // Lead tutors see read-only
     }))
 
     const totalPages = Math.ceil((count || 0) / limit)

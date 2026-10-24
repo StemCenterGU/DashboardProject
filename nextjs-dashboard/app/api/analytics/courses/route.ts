@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server'
+import { requirePermission, authErrorStatus } from '@/lib/auth'
 import { createServerClient } from '@/lib/supabase-server'
 
 export async function GET() {
+  try {
+    await requirePermission('VIEW_ANALYTICS')
+  } catch (error) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: authErrorStatus(error) })
+  }
+
   try {
     const supabase = await createServerClient()
     if (!supabase) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { ensureUserRow } from '@/lib/ensure-user'
+import { DEFAULT_ROLE } from '@/lib/roles'
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
       user_id: user.id,
       email: user.email,
       full_name: userData?.full_name ?? user.user_metadata?.full_name ?? '',
-      role: userData?.role ?? user.user_metadata?.role ?? 'tutor',
+      role: userData?.role ?? DEFAULT_ROLE,
       active: userData?.active ?? true,
     })
   } catch (error) {

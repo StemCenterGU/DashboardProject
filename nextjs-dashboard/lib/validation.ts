@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod'
+import { ALL_ROLES, type Role } from './roles'
 
 // Common schemas
 export const emailSchema = z.string().email('Invalid email address').max(255)
@@ -39,13 +40,7 @@ export const appointmentStatusSchema = z.enum([
 ])
 
 // User role schema
-export const userRoleSchema = z.enum([
-  'tutor',
-  'lead_tutor',
-  'manager',
-  'admin',
-  'developer',
-])
+export const userRoleSchema = z.enum(ALL_ROLES as [Role, ...Role[]])
 
 // Recurrence pattern schema
 export const recurrencePatternSchema = z.object({

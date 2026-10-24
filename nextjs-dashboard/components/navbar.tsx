@@ -16,6 +16,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LogOut, User, Settings, Code2, Users, CalendarClock, FileText, ClipboardList, UserPlus, Wrench } from "lucide-react"
 import { NotificationBell } from "@/components/notifications/NotificationBell"
+import { canAccessPage, getHomePath, getRoleDisplayName, hasPermission } from "@/lib/roles"
 
 export function Navbar() {
   const router = useRouter()
@@ -31,16 +32,17 @@ export function Navbar() {
       try {
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.user) {
-          // Always fetch from API so role comes from users table (e.g. developer)
+          // Always fetch from API so role comes from the users table
           const response = await fetch("/api/user-info")
           if (response.ok) {
             const userData = await response.json()
             setUser(userData)
           } else {
+            // No role until the server confirms it: show only links open to every role
             setUser({
               email: session.user.email,
               full_name: session.user.user_metadata?.full_name || session.user.email,
-              role: session.user.user_metadata?.role || 'tutor',
+              role: null,
             })
           }
         } else {
@@ -95,37 +97,45 @@ export function Navbar() {
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center space-x-6">
-          <Link href="/dashboard" className="text-xl font-bold">
+          <Link href={getHomePath(user?.role)} className="text-xl font-bold">
             📋 Tutor Dashboard
           </Link>
           <div className="hidden md:flex space-x-4">
-            <Link href="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-              Dashboard
-            </Link>
+            {canAccessPage(user?.role, "/dashboard") && (
+              <Link href="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+                Dashboard
+              </Link>
+            )}
             <Link href="/scheduling" className="text-sm font-medium text-muted-foreground hover:text-foreground">
               Scheduling
             </Link>
-            <Link href="/charts" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-              Analytics
-            </Link>
+            {canAccessPage(user?.role, "/charts") && (
+              <Link href="/charts" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+                Analytics
+              </Link>
+            )}
             <Link href="/calendar" className="text-sm font-medium text-muted-foreground hover:text-foreground">
               Calendar
             </Link>
-            <Link href="/tutor-schedules" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
-              <CalendarClock className="h-4 w-4" />
-              Tutor Schedules
-            </Link>
-            <Link href="/reports" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
-              <FileText className="h-4 w-4" />
-              Reports
-            </Link>
-            {(user?.role === "admin" || user?.role === "manager" || user?.role === "developer") && (
+            {canAccessPage(user?.role, "/tutor-schedules") && (
+              <Link href="/tutor-schedules" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
+                <CalendarClock className="h-4 w-4" />
+                Tutor Schedules
+              </Link>
+            )}
+            {canAccessPage(user?.role, "/reports") && (
+              <Link href="/reports" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
+                <FileText className="h-4 w-4" />
+                Reports
+              </Link>
+            )}
+            {hasPermission(user?.role, "VIEW_SCHEDULE_REQUESTS") && (
               <Link href="/admin/schedule-requests" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
                 <CalendarClock className="h-4 w-4" />
                 Schedule Requests
               </Link>
             )}
-            {(user?.role === "admin" || user?.role === "developer") && (
+            {canAccessPage(user?.role, "/admin/users") && (
               <>
                 <Link href="/admin/users" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
                   <Users className="h-4 w-4" />
@@ -149,7 +159,7 @@ export function Navbar() {
                     <DropdownMenuItem asChild>
                       <Link href="/admin/report-options" className="cursor-pointer">
                         <FileText className="mr-2 h-4 w-4" />
-                        Report Options
+                        Client Report Forms
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
@@ -162,13 +172,7 @@ export function Navbar() {
                 </DropdownMenu>
               </>
             )}
-            {(user?.role === "admin" || user?.role === "manager") && (
-              <Link href="/users" className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                Users
-              </Link>
-            )}
-            {user?.role === "developer" && (
+            {canAccessPage(user?.role, "/replica") && (
               <Link href="/replica" className="text-sm font-medium text-foreground hover:text-foreground flex items-center gap-1">
                 <Code2 className="h-4 w-4" />
                 Replica
@@ -205,6 +209,11 @@ export function Navbar() {
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.email || "user@example.com"}
                   </p>
+                  {user?.role && (
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {getRoleDisplayName(user.role)}
+                    </p>
+                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { WCOnlineSyncService } from '@/lib/wconline-sync'
-import { requireAdmin } from '@/lib/auth'
+import { requireFullAccess } from '@/lib/auth'
 
 /**
  * Sync WCOnline data for a date range
- * Requires: admin or manager role
+ * Requires: admin or project manager role
  *
  * POST /api/sync/wconline/range?start=2024-10-01&end=2024-12-07
  *
@@ -14,11 +14,11 @@ import { requireAdmin } from '@/lib/auth'
  */
 export async function POST(request: NextRequest) {
   try {
-    // Require admin/manager authentication
-    await requireAdmin()
+    // Require full access (admin or project manager)
+    await requireFullAccess()
   } catch (error) {
     return NextResponse.json(
-      { error: 'Unauthorized - admin or manager role required' },
+      { error: 'Unauthorized - admin or project manager role required' },
       { status: 401 }
     )
   }
@@ -155,15 +155,15 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET endpoint to check range sync info
- * Requires: admin or manager role
+ * Requires: admin or project manager role
  */
 export async function GET() {
   try {
-    // Require admin/manager authentication
-    await requireAdmin()
+    // Require full access (admin or project manager)
+    await requireFullAccess()
   } catch (error) {
     return NextResponse.json(
-      { error: 'Unauthorized - admin or manager role required' },
+      { error: 'Unauthorized - admin or project manager role required' },
       { status: 401 }
     )
   }

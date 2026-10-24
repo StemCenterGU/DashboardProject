@@ -202,14 +202,16 @@ On smaller screens, the navigation collapses into a hamburger menu:
 
 ## 🔐 Permission-Based Visibility
 
-| Feature | Tutor | Lead Tutor | Manager | Admin |
-|---------|-------|------------|---------|-------|
-| Reports (view/create) | ✅ | ✅ | ✅ | ✅ |
-| Schedule Requests | ❌ | ❌ | ✅ | ✅ |
+| Feature | Student | Tutor / STEM PASS Tutor | Student Manager | Admin / Project Manager |
+|---------|---------|-------------------------|-----------------|-------------------------|
+| Scheduling, Calendar | ✅ (own bookings) | ✅ (own) | ✅ (view all) | ✅ |
+| Dashboard, Analytics | ❌ | ❌ | ✅ | ✅ |
+| Tutor Schedules, Reports | ❌ | ✅ | ✅ | ✅ |
+| Schedule Requests | ❌ | ❌ | ❌ | ✅ |
+| User Management | ❌ | ❌ | ❌ | ✅ |
 | Admin Setup Dropdown | ❌ | ❌ | ❌ | ✅ |
-| - Appointment Forms | ❌ | ❌ | ❌ | ✅ |
-| - Report Options | ❌ | ❌ | ❌ | ✅ |
-| - Registration Forms | ❌ | ❌ | ❌ | ✅ |
+
+Full details: `nextjs-dashboard/docs/RBAC-IMPLEMENTATION-GUIDE.md`
 
 ---
 

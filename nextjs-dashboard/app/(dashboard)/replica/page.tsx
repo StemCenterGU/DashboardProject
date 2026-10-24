@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth"
+import { isFullAccess } from "@/lib/roles"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Code2 } from "lucide-react"
@@ -9,8 +10,8 @@ export default async function ReplicaPage() {
   const user = await getCurrentUser()
   if (!user) redirect("/login")
 
-  // Latest/new features are developer-only (not admin)
-  if (user.role !== "developer") {
+  // Latest/new features are for full-access roles (admin, project manager)
+  if (!isFullAccess(user.role)) {
     redirect("/dashboard")
   }
 
@@ -22,7 +23,7 @@ export default async function ReplicaPage() {
           WCOnline Replica
         </h1>
         <p className="text-muted-foreground">
-          New and latest features live here. Only visible when logged in with the <strong>developer</strong> role.
+          New and latest features live here. Only visible to <strong>admin</strong> and <strong>project manager</strong> roles.
         </p>
       </div>
 

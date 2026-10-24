@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { SchedulingAnalytics } from '@/lib/analytics'
-import { requireAuth } from '@/lib/auth'
+import { requirePermission } from '@/lib/auth'
 import { rateLimit, RateLimits } from '@/lib/rate-limit'
 import { productionLogger } from '@/lib/logger'
 
@@ -14,7 +14,7 @@ import { productionLogger } from '@/lib/logger'
 export async function GET(request: NextRequest) {
   try {
     // Require authentication for data export
-    const currentUser = await requireAuth()
+    const currentUser = await requirePermission('EXPORT_REPORTS')
 
     // Apply very strict rate limiting for exports (2 requests per minute)
     const rateLimitResult = rateLimit(request, RateLimits.veryStrict, currentUser.user_id)
@@ -164,7 +164,7 @@ export async function GET(request: NextRequest) {
     const filename = `appointments_export_${timestamp}.csv`
 
     // Audit log the export
-    const currentUser = await requireAuth()
+    const currentUser = await requirePermission('EXPORT_REPORTS')
     productionLogger.audit('csv_export', currentUser.user_id, {
       recordCount: appointments.length,
       filename,

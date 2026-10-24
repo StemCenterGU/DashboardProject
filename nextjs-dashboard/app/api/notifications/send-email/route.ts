@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
+import { requirePermission, authErrorStatus } from "@/lib/auth"
 
 /**
  * Send email notification to student about appointment
  * POST /api/notifications/send-email
  */
 export async function POST(request: NextRequest) {
+  try {
+    await requirePermission("CREATE_CLIENT_REPORT")
+  } catch (error) {
+    return NextResponse.json({ error: "Forbidden" }, { status: authErrorStatus(error) })
+  }
+
   try {
     const body = await request.json()
 

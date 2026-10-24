@@ -13,8 +13,8 @@
     "lint": "next lint",
     "test": "bash test-runner.sh",
     "typecheck": "tsc --noEmit",
-    "set-admin": "node scripts/utils/set-admin-role.js",
-    "set-developer": "node scripts/utils/set-developer-role.js"
+    "set-admin": "node scripts/utils/set-role.js",
+    "set-role": "node scripts/utils/set-role.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

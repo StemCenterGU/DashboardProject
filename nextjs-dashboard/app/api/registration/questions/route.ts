@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase-server'
 
 // GET /api/registration/questions - Get all active registration questions (public)
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    // Public endpoint (registration form); anonymous visitors have no table access under RLS
+    const supabase = createAdminClient() ?? await createServerClient()
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
     }

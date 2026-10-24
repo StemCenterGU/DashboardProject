@@ -8,7 +8,7 @@
  *
  * Example:
  * const { user, role, isLoading, error } = useUser()
- * if (isAdminLevel(role)) { // show admin UI }
+ * if (isFullAccess(role)) { // show admin UI }
  */
 
 'use client'
@@ -225,7 +225,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
  *
  * @example
  * const { user, role, isLoading } = useUser()
- * if (isAdminLevel(role)) {
+ * if (isFullAccess(role)) {
  *   return <AdminPanel />
  * }
  */

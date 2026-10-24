@@ -11,7 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminLevel } from '@/lib/auth'
+import { requireFullAccess } from '@/lib/auth'
 import { createServerClient, createAdminClient } from '@/lib/supabase-server'
 import { ALL_ROLES, isValidRole } from '@/lib/roles'
 
@@ -23,7 +23,7 @@ export async function PUT(
 ) {
   try {
     // 1. Require admin authentication
-    const adminUser = await requireAdminLevel()
+    const adminUser = await requireFullAccess()
 
     // 2. Get admin client (bypasses RLS for admin operations)
     const adminClient = createAdminClient()

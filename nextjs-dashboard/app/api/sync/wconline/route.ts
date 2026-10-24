@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { WCOnlineSyncService } from '@/lib/wconline-sync'
-import { requireAdmin } from '@/lib/auth'
+import { requireFullAccess } from '@/lib/auth'
 import { rateLimit, RateLimits } from '@/lib/rate-limit'
 import { productionLogger } from '@/lib/logger'
 
@@ -9,7 +9,7 @@ import { productionLogger } from '@/lib/logger'
  * Sync WCOnline data to Supabase
  *
  * POST /api/sync/wconline
- * Requires: admin or manager role
+ * Requires: admin or project manager role
  * Rate limited: 2 requests per minute
  *
  * Query parameters:
@@ -19,8 +19,8 @@ import { productionLogger } from '@/lib/logger'
  */
 export async function POST(request: NextRequest) {
   try {
-    // Require admin/manager authentication
-    const currentUser = await requireAdmin()
+    // Require full access (admin or project manager)
+    const currentUser = await requireFullAccess()
 
     // Apply very strict rate limiting (2 requests per minute)
     const rateLimitResult = rateLimit(request, RateLimits.veryStrict, currentUser.user_id)
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     return NextResponse.json(
-      { error: 'Unauthorized - admin or manager role required' },
+      { error: 'Unauthorized - admin or project manager role required' },
       { status: 401 }
     )
   }
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     const result = await syncService.syncAll(syncDate)
 
     // Audit log the sync operation
-    const currentUser = await requireAdmin()
+    const currentUser = await requireFullAccess()
     productionLogger.audit('wconline_sync', currentUser.user_id, {
       success: result.success,
       date: dateParam || 'today',
@@ -121,15 +121,15 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET endpoint to check sync status or test connection
- * Requires: admin or manager role
+ * Requires: admin or project manager role
  */
 export async function GET(request: NextRequest) {
   try {
-    // Require admin/manager authentication
-    await requireAdmin()
+    // Require full access (admin or project manager)
+    await requireFullAccess()
   } catch (error) {
     return NextResponse.json(
-      { error: 'Unauthorized - admin or manager role required' },
+      { error: 'Unauthorized - admin or project manager role required' },
       { status: 401 }
     )
   }

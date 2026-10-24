@@ -7,6 +7,7 @@
 import { createClient } from '@supabase/supabase-js'
 import type { User as AuthUser } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { DEFAULT_ROLE } from './roles'
 
 export interface UsersRow {
   user_id: string
@@ -27,9 +28,9 @@ export async function ensureUserRow(
 ): Promise<UsersRow | null> {
   const email = authUser.email?.toLowerCase().trim() ?? ''
   const fullName = authUser.user_metadata?.full_name ?? authUser.email ?? ''
-  const allowedRoles = ['tutor', 'lead_tutor', 'manager', 'admin', 'developer']
-  const metaRole = authUser.user_metadata?.role ?? 'tutor'
-  const role = allowedRoles.includes(metaRole) ? metaRole : 'tutor'
+  // Never trust user_metadata.role: users can set it themselves at sign-up.
+  // New rows always start with the default role; admins promote from User Management.
+  const role = DEFAULT_ROLE
   const row = {
     user_id: authUser.id,
     email,

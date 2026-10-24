@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase-server"
-import { requireAuth } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 import { parseScheduleFile } from "@/lib/scheduleParser"
 
 /**
@@ -11,7 +11,7 @@ import { parseScheduleFile } from "@/lib/scheduleParser"
 export async function POST(request: NextRequest) {
   try {
     // Require authentication
-    await requireAuth()
+    await requirePermission("UPLOAD_CSV_SCHEDULES")
   } catch (error) {
     return NextResponse.json(
       { error: "Unauthorized - authentication required" },

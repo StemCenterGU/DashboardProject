@@ -7,7 +7,8 @@
 // USER TYPES
 // ============================================================================
 
-export type UserRole = 'tutor' | 'lead_tutor' | 'manager' | 'admin' | 'developer'
+export type { Role as UserRole } from '@/lib/roles'
+import type { Role as UserRole } from '@/lib/roles'
 
 export interface User {
   user_id: string

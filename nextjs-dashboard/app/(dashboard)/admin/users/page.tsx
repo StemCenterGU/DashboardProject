@@ -28,15 +28,16 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Search, Loader2, UserCog, RefreshCw } from 'lucide-react'
-import { isAdminLevel, ALL_ROLES, ROLE_DISPLAY_NAMES, type Role } from '@/lib/roles'
+import { isFullAccess, ALL_ROLES, ROLE_DISPLAY_NAMES, type Role } from '@/lib/roles'
 
 // Role badge colors
 const roleColors: Record<Role, string> = {
-  tutor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  lead_tutor: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  manager: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  developer: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  project_manager: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  student_manager: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  tutor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  stem_pass_tutor: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
+  student: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
 }
 
 interface User {
@@ -61,7 +62,7 @@ export default function AdminUsersPage() {
   // Redirect if not admin
   useEffect(() => {
     if (authLoading) return
-    if (!isAdminLevel(role)) {
+    if (!isFullAccess(role)) {
       router.push('/dashboard')
     }
   }, [role, authLoading, router])
@@ -91,7 +92,7 @@ export default function AdminUsersPage() {
   }
 
   useEffect(() => {
-    if (isAdminLevel(role)) {
+    if (isFullAccess(role)) {
       fetchUsers()
     }
   }, [role, search, roleFilter])
@@ -139,7 +140,7 @@ export default function AdminUsersPage() {
   }
 
   // Don't render if not admin
-  if (authLoading || !isAdminLevel(role)) {
+  if (authLoading || !isFullAccess(role)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-gray-500" />

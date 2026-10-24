@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase-server"
-import { requireAdmin, requireAuth } from "@/lib/auth"
+import { requireFullAccess, requireAuth } from "@/lib/auth"
 
 /**
  * Create a new tutor
  * POST /api/scheduling/tutors
- * Requires: admin or manager role
+ * Requires: admin or project manager role
  */
 export async function POST(request: NextRequest) {
   try {
-    // Require admin/manager authentication
-    await requireAdmin()
+    // Require full access (admin or project manager)
+    await requireFullAccess()
   } catch (error) {
     return NextResponse.json(
-      { error: "Unauthorized - admin or manager role required" },
+      { error: "Unauthorized - admin or project manager role required" },
       { status: 401 }
     )
   }

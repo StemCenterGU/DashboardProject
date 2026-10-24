@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient, createAdminClient } from "@/lib/supabase-server"
-import { requireAuth } from "@/lib/auth"
+import { requirePermission } from "@/lib/auth"
 
 /**
  * Re-process existing schedules to break down slots into 1-hour chunks
@@ -10,7 +10,7 @@ import { requireAuth } from "@/lib/auth"
 export async function POST(request: NextRequest) {
   try {
     // Require authentication
-    await requireAuth()
+    await requirePermission("BULK_SCHEDULE_OPERATIONS")
   } catch (error) {
     return NextResponse.json(
       { error: "Unauthorized - authentication required" },

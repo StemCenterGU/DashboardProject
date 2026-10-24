@@ -47,7 +47,6 @@ export default function RegisterPage() {
         options: {
           data: {
             full_name: formData.fullName,
-            role: 'tutor', // Default role
           },
           emailRedirectTo: `${window.location.origin}/dashboard`,
         },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
 import { createServerClient } from '@/lib/supabase/server'
+import { hasPermission } from '@/lib/roles'
 
 // POST /api/registration/answers - Submit registration answers (upsert)
 export async function POST(request: NextRequest) {
@@ -71,6 +72,11 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('user_id') || user.user_id
+
+    // Only user managers may read someone else's answers
+    if (userId !== user.user_id && !hasPermission(user.role, 'VIEW_USERS')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const { data: answers, error } = await supabase
       .from('user_registration_answers')

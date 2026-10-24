@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requirePermission, authErrorStatus } from '@/lib/auth'
 import { createServerClient } from '@/lib/supabase-server'
 import { SchedulingAnalytics } from '@/lib/analytics'
 
 export async function GET(request: NextRequest) {
+  try {
+    await requirePermission('VIEW_ANALYTICS')
+  } catch (error) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: authErrorStatus(error) })
+  }
+
   try {
     const supabase = await createServerClient()
     if (!supabase) {
@@ -141,6 +148,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  try {
+    await requirePermission('VIEW_ANALYTICS')
+  } catch (error) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: authErrorStatus(error) })
+  }
+
   try {
     const supabase = await createServerClient()
     if (!supabase) {

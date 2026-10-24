@@ -14,7 +14,7 @@
 
 import { createServerClient } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
-import { ROLES } from '@/lib/roles'
+import { DEFAULT_ROLE } from '@/lib/roles'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,14 +61,14 @@ export async function GET() {
                      user.user_metadata?.name ||
                      email.split('@')[0]
 
-    // Create user with default 'tutor' role
+    // Create user with the default role
     const { data: newUser, error: createError } = await supabase
       .from('users')
       .insert({
         user_id: user.id,
         email: email,
         full_name: fullName,
-        role: ROLES.TUTOR, // Default role for new users
+        role: DEFAULT_ROLE, // Default role for new users
       })
       .select()
       .single()

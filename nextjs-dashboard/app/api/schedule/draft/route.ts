@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
-import { requireAuth, getUserTutor } from '@/lib/auth'
+import { requirePermission, getUserTutor } from '@/lib/auth'
 
 /**
  * GET /api/schedule/draft
@@ -9,7 +9,7 @@ import { requireAuth, getUserTutor } from '@/lib/auth'
 export async function GET(request: NextRequest) {
   let user
   try {
-    user = await requireAuth()
+    user = await requirePermission('CREATE_SCHEDULE_DRAFT')
   } catch (error) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   let user
   try {
-    user = await requireAuth()
+    user = await requirePermission('CREATE_SCHEDULE_DRAFT')
   } catch (error) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   let user
   try {
-    user = await requireAuth()
+    user = await requirePermission('CREATE_SCHEDULE_DRAFT')
   } catch (error) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase-server'
-import { requireAuth, getUserTutor } from '@/lib/auth'
+import { createServerClient, createAdminClient } from '@/lib/supabase-server'
+import { FULL_ACCESS_ROLES } from '@/lib/roles'
+import { requirePermission, getUserTutor } from '@/lib/auth'
 
 /**
  * POST /api/schedule/submit
@@ -9,7 +10,7 @@ import { requireAuth, getUserTutor } from '@/lib/auth'
 export async function POST(request: NextRequest) {
   let user
   try {
-    user = await requireAuth()
+    user = await requirePermission('SUBMIT_SCHEDULE_CHANGES')
   } catch (error) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -89,11 +90,13 @@ export async function POST(request: NextRequest) {
 
     if (updateError) throw updateError
 
-    // Get all admin users
-    const { data: admins } = await supabase
+    // Get all approvers (admins and project managers).
+    // Uses the admin client: tutors cannot read other users or write their notifications under RLS.
+    const adminClient = createAdminClient() ?? supabase
+    const { data: admins } = await adminClient
       .from('users')
       .select('user_id, email, full_name')
-      .in('role', ['admin', 'manager', 'developer'])
+      .in('role', FULL_ACCESS_ROLES)
 
     // Create notifications for all admins
     if (admins && admins.length > 0) {
@@ -106,7 +109,7 @@ export async function POST(request: NextRequest) {
         related_request_id: draftRequest.request_id,
       }))
 
-      await supabase.from('notifications').insert(notifications)
+      await adminClient.from('notifications').insert(notifications)
     }
 
     // TODO: Send email notifications to admins

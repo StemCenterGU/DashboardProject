@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireDeveloper } from '@/lib/auth'
+import { requireFullAccess } from '@/lib/auth'
 
 /**
  * Test database connection and permissions
  * GET /api/test/db
- * Requires: developer role
+ * Requires: admin or project manager
  */
 export async function GET() {
   try {
-    // Require developer role for this sensitive endpoint
-    await requireDeveloper()
+    // Require full access for this sensitive endpoint
+    await requireFullAccess()
   } catch (error) {
     return NextResponse.json(
-      { error: 'Unauthorized - developer role required' },
+      { error: 'Unauthorized - full access required' },
       { status: 401 }
     )
   }
