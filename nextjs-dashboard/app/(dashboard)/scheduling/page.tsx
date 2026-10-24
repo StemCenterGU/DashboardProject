@@ -17,6 +17,8 @@ import { WeekAsDayGrids, AppointmentDetail } from "@/components/week-as-day-grid
 import { TodayAppointments, UpcomingAppointments } from "@/components/scheduling"
 import { AppointmentBookingDialog } from "@/components/appointment-booking-dialog"
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog"
+import { useUser } from "@/contexts/AuthContext"
+import { isStaff } from "@/lib/roles"
 
 interface Appointment {
   appointment_id: string
@@ -55,6 +57,8 @@ interface FocusOption {
 }
 
 export default function SchedulingPage() {
+  const { role } = useUser()
+  const showStaffTabs = isStaff(role)
   const [activeTab, setActiveTab] = useState("schedule")
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([])
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([])
@@ -297,18 +301,22 @@ export default function SchedulingPage() {
         >
           Appointments
         </Button>
-        <Button
-          variant={activeTab === "tutors" ? "default" : "ghost"}
-          onClick={() => setActiveTab("tutors")}
-        >
-          Tutors
-        </Button>
-        <Button
-          variant={activeTab === "availability" ? "default" : "ghost"}
-          onClick={() => setActiveTab("availability")}
-        >
-          Availability
-        </Button>
+        {showStaffTabs && (
+          <>
+            <Button
+              variant={activeTab === "tutors" ? "default" : "ghost"}
+              onClick={() => setActiveTab("tutors")}
+            >
+              Tutors
+            </Button>
+            <Button
+              variant={activeTab === "availability" ? "default" : "ghost"}
+              onClick={() => setActiveTab("availability")}
+            >
+              Availability
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Schedule Grid View - WCOnline-style: title, week nav, instructions, display options, then grid */}
@@ -494,7 +502,7 @@ export default function SchedulingPage() {
       )}
 
       {/* Tutors View */}
-      {activeTab === "tutors" && (
+      {activeTab === "tutors" && showStaffTabs && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -535,7 +543,7 @@ export default function SchedulingPage() {
       )}
 
       {/* Availability View */}
-      {activeTab === "availability" && (
+      {activeTab === "availability" && showStaffTabs && (
         <Card>
           <CardHeader>
             <div>

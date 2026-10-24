@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth, getUserTutorIds } from '@/lib/auth'
+import { ownReportsFilter } from '@/lib/appointment-access'
 import { createServerClient } from '@/lib/supabase/server'
 import { hasPermission } from '@/lib/roles'
 
@@ -26,6 +27,10 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
 
+    if (!hasPermission(user.role, 'VIEW_OWN_REPORTS')) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
+
     // Build query
     let query = supabase
       .from('client_reports')
@@ -38,6 +43,11 @@ export async function GET(request: NextRequest) {
       `)
       .order('report_date', { ascending: false })
       .range(offset, offset + limit - 1)
+
+    // Tutors only see their own reports
+    if (!hasPermission(user.role, 'VIEW_ALL_REPORTS')) {
+      query = query.or(ownReportsFilter(user, await getUserTutorIds(user)))
+    }
 
     // Apply filters
     if (appointmentId) {

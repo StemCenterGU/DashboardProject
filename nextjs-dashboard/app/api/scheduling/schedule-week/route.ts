@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase-server"
+import { createServerClient, createAdminClient } from "@/lib/supabase-server"
 import { format, addDays, parseISO } from "date-fns"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, type User } from "@/lib/auth"
+import { isStudent } from "@/lib/roles"
+import { getAppointmentAccess, canViewAppointment, canEditAppointment, redactAppointment } from "@/lib/appointment-access"
 
 const HOUR_START = 14 // 2pm
 const HOUR_END = 20 // 8pm (last slot is 8pm-9pm)
@@ -10,11 +12,14 @@ const HOUR_END = 20 // 8pm (last slot is 8pm-9pm)
  * Get weekly schedule with tutor availability and appointments
  * GET /api/scheduling/schedule-week
  * Requires: Authentication
+ * Appointments the user cannot view (see lib/appointment-access) come back as
+ * plain "Booked" entries with no student/course/notes and no appointment_id.
  */
 export async function GET(request: NextRequest) {
+  let user: User
   try {
     // Require authentication
-    await requireAuth()
+    user = await requireAuth()
   } catch (error) {
     return NextResponse.json(
       { error: "Unauthorized - authentication required" },
@@ -23,10 +28,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabase = await createServerClient()
+    // Every booking is needed to mark slots as taken, so read with the admin client
+    // (RLS only exposes a user's own appointments) and redact below.
+    const supabase = createAdminClient() ?? await createServerClient()
     if (!supabase) {
       return NextResponse.json({ error: "Database connection failed" }, { status: 500 })
     }
+    const access = await getAppointmentAccess(user)
 
     const searchParams = request.nextUrl.searchParams
     const weekStartParam = searchParams.get("week_start")
@@ -123,12 +131,15 @@ export async function GET(request: NextRequest) {
       is_online: boolean | null
       is_walk_in: boolean | null
       notes: string | null
+      can_edit: boolean
+      can_use_staff_tools: boolean
     }
+    type SlotAppointment = AppointmentDetail | ReturnType<typeof redactAppointment>
     const slotKey = (tutorId: string, dateStr: string, hour: number) =>
       `${tutorId}|${dateStr}|${hour}`
 
     const slotStatus: Record<string, SlotStatus> = {}
-    const slotAppointments: Record<string, AppointmentDetail> = {}
+    const slotAppointments: Record<string, SlotAppointment> = {}
 
     for (const tutor of tutors) {
       for (let d = 0; d < 6; d++) {
@@ -172,7 +183,10 @@ export async function GET(request: NextRequest) {
               })()
           )
 
-          if (bookedAppointment) {
+          if (bookedAppointment && !canViewAppointment(access, bookedAppointment)) {
+            slotStatus[key] = "booked"
+            slotAppointments[key] = redactAppointment(bookedAppointment)
+          } else if (bookedAppointment) {
             slotStatus[key] = "booked"
             slotAppointments[key] = {
               appointment_id: bookedAppointment.appointment_id,
@@ -188,6 +202,8 @@ export async function GET(request: NextRequest) {
               is_online: bookedAppointment.is_online,
               is_walk_in: bookedAppointment.is_walk_in,
               notes: bookedAppointment.notes,
+              can_edit: canEditAppointment(access, bookedAppointment),
+              can_use_staff_tools: canEditAppointment(access, bookedAppointment) && !isStudent(user.role),
             }
           } else if (inAvailability) {
             slotStatus[key] = "available"
@@ -207,7 +223,7 @@ export async function GET(request: NextRequest) {
     let finalSlotAppointments = slotAppointments
     if (allowedTutorIds) {
       finalSlotStatus = {} as Record<string, SlotStatus>
-      finalSlotAppointments = {} as Record<string, AppointmentDetail>
+      finalSlotAppointments = {} as Record<string, SlotAppointment>
       for (const key of Object.keys(slotStatus)) {
         const tutorId = key.split("|")[0]
         if (allowedTutorIds.has(tutorId)) {

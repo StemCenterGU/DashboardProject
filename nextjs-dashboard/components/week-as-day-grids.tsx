@@ -49,6 +49,10 @@ export interface AppointmentDetail {
   is_online: boolean | null
   is_walk_in: boolean | null
   notes: string | null
+  /** Someone else's booking: details hidden by the API, cannot be opened */
+  is_restricted?: boolean
+  can_edit?: boolean
+  can_use_staff_tools?: boolean
 }
 
 interface WeekData {
@@ -216,6 +220,7 @@ export function WeekAsDayGrids({
                         const status = slotStatus[key]
                         let isAvailable = status === "available"
                         const isBooked = status === "booked"
+                        const isRestricted = isBooked && slotAppointments[key]?.is_restricted === true
 
                         // Check if this slot is in the past
                         const now = new Date()
@@ -230,7 +235,9 @@ export function WeekAsDayGrids({
 
                         let cellClass =
                           "border border-gray-300 p-2 min-h-[50px] transition-colors "
-                        if (isBooked) {
+                        if (isRestricted) {
+                          cellClass += "bg-orange-300 cursor-not-allowed"
+                        } else if (isBooked) {
                           cellClass += "bg-orange-500 hover:bg-orange-600 cursor-pointer"
                         } else if (isAvailable) {
                           cellClass += "bg-white hover:bg-gray-100 cursor-pointer"
@@ -240,7 +247,9 @@ export function WeekAsDayGrids({
 
                         let title = isAvailable
                           ? `Available - ${formatTimeLabel(hour)}`
-                          : isBooked
+                          : isRestricted
+                            ? "Booked"
+                            : isBooked
                             ? `Booked - ${slotAppointments[key]?.student_name ?? "Click for details"}`
                             : "Not available"
 
@@ -252,7 +261,7 @@ export function WeekAsDayGrids({
                         const handleClick = () => {
                           if (isAvailable && !isPast && onSlotClick) {
                             onSlotClick(tutor.tutor_id, tutor.tutor_name, day.date, hour)
-                          } else if (isBooked && onBookedSlotClick) {
+                          } else if (isBooked && !isRestricted && onBookedSlotClick) {
                             const appointment = slotAppointments[key]
                             if (appointment) {
                               onBookedSlotClick(appointment, tutor.tutor_name, day.date, hour)

@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase-server"
-import { requireAuth } from "@/lib/auth"
+import { createServerClient, createAdminClient } from "@/lib/supabase-server"
+import { requireAuth, type User } from "@/lib/auth"
+import { getAppointmentAccess, canViewAppointment, redactAppointment } from "@/lib/appointment-access"
 
 /**
  * Get schedule grid for a specific date
  * GET /api/scheduling/schedule-grid
  * Requires: Authentication
+ * Appointments the user cannot view come back redacted ("Booked" only).
  */
 export async function GET(request: NextRequest) {
+  let user: User
   try {
     // Require authentication
-    await requireAuth()
+    user = await requireAuth()
   } catch (error) {
     return NextResponse.json(
       { error: "Unauthorized - authentication required" },
@@ -19,7 +22,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabase = await createServerClient()
+    // All bookings are needed to show taken slots; redact below
+    const supabase = createAdminClient() ?? await createServerClient()
     if (!supabase) {
       return NextResponse.json({ error: "Database connection failed" }, { status: 500 })
     }
@@ -47,13 +51,15 @@ export async function GET(request: NextRequest) {
     // Fetch appointments for the selected date first
     const { data: appointments, error: appointmentsError } = await supabase
       .from("appointments")
-      .select("tutor_id, tutor_name, start_time, end_time, student_name, course_name, status, is_online, is_walk_in, is_missed")
+      .select("tutor_id, tutor_name, start_time, end_time, student_name, student_email, course_name, status, is_online, is_walk_in, is_missed")
       .eq("appointment_date", date)
       .order("start_time")
 
     if (appointmentsError) {
       return NextResponse.json({ error: appointmentsError.message }, { status: 500 })
     }
+
+    const access = await getAppointmentAccess(user)
 
     // Get unique tutor IDs from both available slots and appointments
     const availableTutorIds = new Set((availableSlots || []).map(slot => slot.tutor_id))
@@ -74,7 +80,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       date,
       tutors: tutors || [],
-      appointments: appointments || [],
+      appointments: (appointments || []).map(({ student_email, ...apt }) =>
+        canViewAppointment(access, { tutor_id: apt.tutor_id, student_email }) ? apt : redactAppointment(apt)
+      ),
       availability: availableSlots || [], // Available slots (white boxes - excludes booked appointments)
     })
   } catch (error: any) {

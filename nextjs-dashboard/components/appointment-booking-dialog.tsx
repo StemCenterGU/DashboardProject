@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Loader2, Paperclip, X, Repeat } from "lucide-react"
 import { User, RecurrencePattern } from "@/types"
 import { RecurringAppointmentDialog } from "@/components/recurring-appointment-dialog"
+import { hasPermission, isStudent } from "@/lib/roles"
 
 interface FocusOption {
   focus_id: string
@@ -97,10 +98,19 @@ export function AppointmentBookingDialog({
     if (open) {
       fetch("/api/user-info")
         .then((res) => res.ok ? res.json() : null)
-        .then((data) => setCurrentUser(data))
+        .then((data) => {
+          setCurrentUser(data)
+          // Students always book for themselves
+          if (data && isStudent(data.role)) {
+            setStudentName(data.full_name || data.email)
+            setStudentEmail(data.email)
+          }
+        })
         .catch(() => setCurrentUser(null))
     }
   }, [open])
+
+  const bookingAsStudent = isStudent(currentUser?.role)
 
   // Calculate default end time (1 hour after start)
   useEffect(() => {
@@ -306,6 +316,7 @@ export function AppointmentBookingDialog({
                 onChange={(e) => setStudentName(e.target.value)}
                 placeholder="Your Name (name@gannon.edu)"
                 required
+                readOnly={bookingAsStudent}
                 className="bg-gray-50"
               />
               <Input
@@ -313,6 +324,7 @@ export function AppointmentBookingDialog({
                 value={studentEmail}
                 onChange={(e) => setStudentEmail(e.target.value)}
                 placeholder="your.email@gannon.edu"
+                readOnly={bookingAsStudent}
                 className="bg-gray-50"
               />
             </div>
@@ -346,15 +358,17 @@ export function AppointmentBookingDialog({
                 </p>
                 <p className="text-sm text-gray-600">{tutorName} | STEM Center</p>
               </div>
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => setShowRecurringDialog(true)}
-                className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
-              >
-                <Repeat className="h-4 w-4" />
-                Repeating Options
-              </Button>
+              {!bookingAsStudent && (
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => setShowRecurringDialog(true)}
+                  className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                >
+                  <Repeat className="h-4 w-4" />
+                  Repeating Options
+                </Button>
+              )}
             </div>
             <div className="p-3 bg-blue-50 border-2 border-blue-600 rounded">
               <p className="font-semibold">APPOINTMENT LIMITS: <span className="font-normal">Appointments must be 1 hour in length.</span></p>
@@ -630,11 +644,12 @@ export function AppointmentBookingDialog({
             </div>
           </div>
 
-          {/* Administrative Options Section */}
+          {/* Administrative Options Section (staff only) */}
+          {!bookingAsStudent && (
           <div className="border-2 border-red-300 bg-red-50 rounded-lg p-4">
             <h3 className="text-lg font-semibold text-red-700 mb-3">Administrative Options</h3>
             <div className="grid grid-cols-2 gap-3">
-              {/* Walk-In / Drop-In - Available to all users */}
+              {/* Walk-In / Drop-In - Available to all staff */}
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -645,8 +660,8 @@ export function AppointmentBookingDialog({
                 <span className="text-sm">Walk-In / Drop-In</span>
               </label>
 
-              {/* No-Show / Missed - Admin/Manager/Lead Tutor only */}
-              {currentUser && ['admin', 'manager', 'lead_tutor'].includes(currentUser.role) && (
+              {/* No-Show / Missed - roles with MARK_NO_SHOW */}
+              {hasPermission(currentUser?.role, "MARK_NO_SHOW") && (
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -658,7 +673,7 @@ export function AppointmentBookingDialog({
                 </label>
               )}
 
-              {/* Placeholder - Available to all users */}
+              {/* Placeholder - Available to all staff */}
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -669,7 +684,7 @@ export function AppointmentBookingDialog({
                 <span className="text-sm">Placeholder</span>
               </label>
 
-              {/* Notify Client - Available to all users */}
+              {/* Notify Client - Available to all staff */}
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -681,6 +696,7 @@ export function AppointmentBookingDialog({
               </label>
             </div>
           </div>
+          )}
 
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-md">

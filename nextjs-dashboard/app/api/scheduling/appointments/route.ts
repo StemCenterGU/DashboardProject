@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase-server"
+import { createServerClient, createAdminClient } from "@/lib/supabase-server"
 import { randomUUID } from "crypto"
-import { requireAuth, getCurrentUser } from "@/lib/auth"
+import { requireAuth, type User } from "@/lib/auth"
+import { hasPermission, isStudent } from "@/lib/roles"
+import { getAppointmentAccess, canEditAppointment, ownAppointmentsFilter } from "@/lib/appointment-access"
 import { createAppointmentSchema, updateAppointmentSchema, validateBody, appointmentQuerySchema, parseSearchParams } from "@/lib/validation"
 import { RecurrencePattern } from "@/types"
 
@@ -9,11 +11,14 @@ import { RecurrencePattern } from "@/types"
  * Create a new appointment
  * POST /api/scheduling/appointments
  * Requires: Authentication
+ * - Students book only for themselves (name/email come from their account)
+ * - Staff without EDIT_ALL_APPOINTMENTS book only with themselves as the tutor
  */
 export async function POST(request: NextRequest) {
+  let currentUser: User
   try {
     // Require authentication
-    await requireAuth()
+    currentUser = await requireAuth()
   } catch (error) {
     return NextResponse.json(
       { error: "Unauthorized - authentication required" },
@@ -38,11 +43,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let {
+      student_name,
+      student_email,
+    } = validation.data
     const {
       tutor_id,
       tutor_name,
-      student_name,
-      student_email,
       course_id,
       course_name,
       course_code,
@@ -62,19 +69,31 @@ export async function POST(request: NextRequest) {
       recurrence_end_date,
     } = validation.data
 
-    // Get current user for role-based validation
-    const currentUser = await getCurrentUser()
+    const access = await getAppointmentAccess(currentUser)
 
-    // Validate admin-only fields
-    if (is_no_show && currentUser) {
-      const userRole = currentUser.role ?? ''
-      const isAdmin = ['admin', 'manager', 'lead_tutor'].includes(userRole)
-      if (!isAdmin) {
+    if (isStudent(currentUser.role)) {
+      // Students always book for themselves and cannot use staff-only options
+      student_name = currentUser.full_name || currentUser.email
+      student_email = currentUser.email
+      if (recurrence_pattern || is_walk_in || is_placeholder || is_no_show || is_missed || status !== "scheduled") {
         return NextResponse.json(
-          { error: "Only admins, managers, and lead tutors can mark appointments as no-show" },
+          { error: "Students can only book single, regular appointments" },
           { status: 403 }
         )
       }
+    } else if (!access.editAll && !access.tutorIds.includes(tutor_id)) {
+      return NextResponse.json(
+        { error: "You can only book appointments where you are the tutor" },
+        { status: 403 }
+      )
+    }
+
+    // Validate restricted fields
+    if (is_no_show && !hasPermission(currentUser.role, "MARK_NO_SHOW")) {
+      return NextResponse.json(
+        { error: "You do not have permission to mark appointments as no-show" },
+        { status: 403 }
+      )
     }
 
     // Prevent booking appointments in the past
@@ -257,11 +276,13 @@ export async function POST(request: NextRequest) {
  * Get appointments with filtering and pagination
  * GET /api/scheduling/appointments
  * Requires: Authentication
+ * Returns only the user's own appointments unless they can view all.
  */
 export async function GET(request: NextRequest) {
+  let currentUser: User
   try {
     // Require authentication
-    await requireAuth()
+    currentUser = await requireAuth()
   } catch (error) {
     return NextResponse.json(
       { error: "Unauthorized - authentication required" },
@@ -300,6 +321,12 @@ export async function GET(request: NextRequest) {
     let countQuery = supabase
       .from("appointments")
       .select("*", { count: "exact", head: true })
+
+    const ownFilter = ownAppointmentsFilter(await getAppointmentAccess(currentUser))
+    if (ownFilter) {
+      query = query.or(ownFilter)
+      countQuery = countQuery.or(ownFilter)
+    }
 
     if (status) {
       query = query.eq("status", status)
@@ -342,11 +369,13 @@ export async function GET(request: NextRequest) {
 /**
  * Update an existing appointment
  * PATCH /api/scheduling/appointments
- * Requires: Authentication
+ * Requires: Authentication, and the appointment must be the user's own
+ * unless they have EDIT_ALL_APPOINTMENTS. Students can only cancel or add notes.
  */
 export async function PATCH(request: NextRequest) {
+  let currentUser: User
   try {
-    await requireAuth()
+    currentUser = await requireAuth()
   } catch (error) {
     return NextResponse.json(
       { error: "Unauthorized - authentication required" },
@@ -371,6 +400,37 @@ export async function PATCH(request: NextRequest) {
     }
 
     const { appointment_id, ...updateFields } = validation.data
+
+    // Ownership check (admin client so the lookup isn't hidden by RLS)
+    const lookupClient = createAdminClient() ?? supabase
+    const { data: existing } = await lookupClient
+      .from("appointments")
+      .select("appointment_id, tutor_id, student_email")
+      .eq("appointment_id", appointment_id)
+      .single()
+
+    const access = await getAppointmentAccess(currentUser)
+    if (!existing || !canEditAppointment(access, existing)) {
+      return NextResponse.json({ error: "Appointment not found" }, { status: 404 })
+    }
+
+    if (isStudent(currentUser.role)) {
+      const changed = Object.entries(updateFields).filter(([, v]) => v !== undefined).map(([k]) => k)
+      const allowed = changed.every((k) => k === "notes" || (k === "status" && updateFields.status === "cancelled"))
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "Students can only cancel their appointment or update notes" },
+          { status: 403 }
+        )
+      }
+    }
+
+    if ((updateFields.status === "no_show" || updateFields.status === "missed") && !hasPermission(currentUser.role, "MARK_NO_SHOW")) {
+      return NextResponse.json(
+        { error: "You do not have permission to mark appointments as no-show" },
+        { status: 403 }
+      )
+    }
 
     const updateData: Record<string, any> = {}
 

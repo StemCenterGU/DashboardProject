@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth, getUserTutorIds } from '@/lib/auth'
+import { ownsReport } from '@/lib/appointment-access'
 import { createServerClient } from '@/lib/supabase/server'
 import { hasPermission } from '@/lib/roles'
 
@@ -43,6 +44,12 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    const canView = hasPermission(user.role, 'VIEW_ALL_REPORTS') ||
+      (hasPermission(user.role, 'VIEW_OWN_REPORTS') && ownsReport(user, await getUserTutorIds(user), report))
+    if (!canView) {
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
+    }
+
     return NextResponse.json({ report })
   } catch (error: any) {
     console.error('GET report error:', error)
@@ -76,6 +83,18 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
+
+    // Only full-access roles edit other people's reports
+    if (!hasPermission(userRole, 'EDIT_ALL_APPOINTMENTS')) {
+      const { data: existing } = await supabase
+        .from('client_reports')
+        .select('staff_resource_id, created_by')
+        .eq('report_id', id)
+        .single()
+      if (!existing || !ownsReport(user, await getUserTutorIds(user), existing)) {
+        return NextResponse.json({ error: 'Report not found' }, { status: 404 })
+      }
+    }
 
     // Prepare update data (exclude audit fields)
     const updateData: any = {

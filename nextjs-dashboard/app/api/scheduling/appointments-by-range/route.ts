@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase-server"
-import { requireAuth } from "@/lib/auth"
+import { requireAuth, type User } from "@/lib/auth"
+import { getAppointmentAccess, ownAppointmentsFilter } from "@/lib/appointment-access"
 
 /**
  * Get appointments within a date range
  * GET /api/scheduling/appointments-by-range
  * Requires: Authentication
+ * Returns only the user's own appointments unless they can view all.
  */
 export async function GET(request: NextRequest) {
+  let user: User
   try {
     // Require authentication
-    await requireAuth()
+    user = await requireAuth()
   } catch (error) {
     return NextResponse.json(
       { error: "Unauthorized - authentication required" },
@@ -32,13 +35,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "start_date and end_date are required" }, { status: 400 })
     }
 
-    const { data: appointments, error } = await supabase
+    let query = supabase
       .from("appointments")
       .select("appointment_id, appointment_date, start_time, end_time, student_name, tutor_name, course_name, status, is_online, is_walk_in, is_missed")
       .gte("appointment_date", startDate)
       .lte("appointment_date", endDate)
       .order("appointment_date", { ascending: true })
       .order("start_time", { ascending: true })
+
+    const ownFilter = ownAppointmentsFilter(await getAppointmentAccess(user))
+    if (ownFilter) {
+      query = query.or(ownFilter)
+    }
+
+    const { data: appointments, error } = await query
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

@@ -42,6 +42,10 @@ export interface AppointmentDetailData {
   is_online: boolean | null
   is_walk_in: boolean | null
   notes: string | null
+  /** Set by the API: false = read-only (e.g. student manager viewing another tutor's appointment) */
+  can_edit?: boolean
+  /** Set by the API: false = owner without staff tools (students can only cancel) */
+  can_use_staff_tools?: boolean
 }
 
 interface AppointmentDetailDialogProps {
@@ -452,6 +456,10 @@ export function AppointmentDetailDialog({
     setError(null)
   }
 
+  // What this user may do (defaults to allowed when the API doesn't say)
+  const canEdit = appointment.can_edit !== false
+  const canUseStaffTools = canEdit && appointment.can_use_staff_tools !== false
+
   // VIEW MODE
   if (!isEditing) {
     return (
@@ -460,7 +468,7 @@ export function AppointmentDetailDialog({
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="text-2xl text-gray-800">Existing Appointment</DialogTitle>
-              {!isAppointmentCancelled && (
+              {!isAppointmentCancelled && canUseStaffTools && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="default" size="sm" disabled={loading} className="bg-blue-600 hover:bg-blue-700">
@@ -706,44 +714,50 @@ export function AppointmentDetailDialog({
 
           {/* Bottom Buttons */}
           <DialogFooter className="flex flex-wrap gap-2 justify-center sm:justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-green-600 text-white hover:bg-green-700 border-green-600"
-              onClick={() => router.push(`/reports/new?appointment_id=${appointment.appointment_id}`)}
-              disabled={isAppointmentCancelled}
-            >
-              <FileEdit className="mr-1 h-4 w-4" />
-              Create Report
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-cyan-500 text-white hover:bg-cyan-600 border-cyan-500"
-              disabled={isAppointmentCancelled}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Paperclip className="mr-1 h-4 w-4" />
-              Attach Files
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
-              onClick={() => setIsEditing(true)}
-              disabled={isAppointmentCancelled}
-            >
-              Edit Appointment
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-red-500 text-white hover:bg-red-600 border-red-500"
-              onClick={() => setShowCancelConfirm(true)}
-              disabled={isAppointmentCancelled || loading}
-            >
-              Cancel Appointment
-            </Button>
+            {canUseStaffTools && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-green-600 text-white hover:bg-green-700 border-green-600"
+                  onClick={() => router.push(`/reports/new?appointment_id=${appointment.appointment_id}`)}
+                  disabled={isAppointmentCancelled}
+                >
+                  <FileEdit className="mr-1 h-4 w-4" />
+                  Create Report
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-cyan-500 text-white hover:bg-cyan-600 border-cyan-500"
+                  disabled={isAppointmentCancelled}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip className="mr-1 h-4 w-4" />
+                  Attach Files
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
+                  onClick={() => setIsEditing(true)}
+                  disabled={isAppointmentCancelled}
+                >
+                  Edit Appointment
+                </Button>
+              </>
+            )}
+            {canEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-red-500 text-white hover:bg-red-600 border-red-500"
+                onClick={() => setShowCancelConfirm(true)}
+                disabled={isAppointmentCancelled || loading}
+              >
+                Cancel Appointment
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
