@@ -14,7 +14,8 @@
     "test": "bash test-runner.sh",
     "typecheck": "tsc --noEmit",
     "set-admin": "node scripts/utils/set-role.js",
-    "set-role": "node scripts/utils/set-role.js"
+    "set-role": "node scripts/utils/set-role.js",
+    "create-test-accounts": "node scripts/utils/create-test-accounts.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
